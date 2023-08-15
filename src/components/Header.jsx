@@ -35,7 +35,7 @@ function Header(props) {
                 </button>
             </div>
             <div className="header-switch-styling-container">
-                <p onClick={withStylesHandler}>I hate styles</p>
+                <p onClick={withStylesHandler}>I hate CSS</p>
             </div>
         </div>
     );
