@@ -9,6 +9,8 @@ import '../App.css'
 
 import Header from '../components/Header'
 import HomeNoStyle from './HomeNoStyle'
+import { app } from '../firebase'
+import { getStorage, ref, getDownloadURL, getBlob } from "firebase/storage";
 
 const bull = (
     <Box
@@ -24,6 +26,37 @@ function Home(props) {
     const [activeSection, setActiveSection] = useState("links")
     const [withStyles, setWithStyles] = useState(true)
 
+
+    const downloadResume = () => {
+        const storage = getStorage();
+        const storageRef = ref(storage, 'gs://ashinsabu-258b6.appspot.com/Ashin Sabu Resume 2023 February.pdf');
+    
+        getBlob(storageRef)
+        .then((blob) => {
+            // Create a URL for the blob data
+            const url = URL.createObjectURL(blob);
+    
+            // Create a link for the user to download the file
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Ashin Sabu Resume.pdf';
+            link.textContent = 'Download Resume';
+    
+            // Append the link to the document
+            document.body.appendChild(link);
+    
+            // Programmatically click the link to trigger the download
+            link.click();
+    
+            // Clean up: remove the link and revoke the URL
+            link.remove();
+            URL.revokeObjectURL(url);
+        })
+        .catch((error) => {
+            console.error('Error downloading resume:', error);
+        });
+    };
+    
     return (
         <>
             {withStyles?
@@ -65,6 +98,11 @@ function Home(props) {
                                         <li className='card-list-item'>
                                             <a href="https://drive.google.com/file/d/1quHjHg3BrgchFJLni5EfpJGs_0WAhB38/view" target='__blank'>
                                                 {"> "}View on Google Drive<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Google_Drive_icon_%282020%29.svg/2295px-Google_Drive_icon_%282020%29.svg.png'/>
+                                            </a>
+                                        </li>
+                                        <li className='card-list-item'>
+                                            <a onClick={downloadResume} target='__blank'>
+                                                {"> "}Download PDF<img src='https://www.iconpacks.net/icons/2/free-pdf-download-icon-2617-thumb.png'/>
                                             </a>
                                         </li>
                                     </ul>
