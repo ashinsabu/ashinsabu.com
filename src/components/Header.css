@@ -3,14 +3,17 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    padding: .6em 6rem;
+    padding: 1.2em 6rem;
+    position: fixed;
+    width: 100vw;
+    box-sizing: border-box;
 }
 .header-container{
     background-color: #c4c4c4fb;
 }
 .header-container[data-theme="dark"]{
     color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    background-color: #161616;
 }
 .header-links-container{
     display: flex;
@@ -42,7 +45,9 @@
 }
 @media (max-width: 1280px){
     .header-container{
-        padding: .6em 2rem;
+        padding: .6em 1rem;
+        width: 100vw;
+        box-sizing: border-box;
     }
 }
 @media (max-width: 800px){
@@ -58,5 +63,11 @@
 @media (max-width: 450px){
     .header-container{
         gap: 16px;
+    }
+    .header-links-container{
+        gap: .6em;
+    }
+    .header-container{
+        font-size: 16px;
     }
 }

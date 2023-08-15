@@ -30,7 +30,9 @@ img {
     padding: 4em 6rem;
     min-height: 100vh;
     transition: all 0.5s ease-in-out;
+    padding-top: 8em;
 }
+/* BIO CSS */
 .home-bio{
     display: flex;
     gap: 32px;
@@ -41,6 +43,21 @@ img {
     flex-direction: column;
     gap: 8px;
 }
+.home-bio-text-info1{
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+    background-color: black;
+    width: fit-content;
+    color: white;
+}
+section{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 .home-bio-text a{
     text-decoration: none;
     background-color: #698CB3;
@@ -49,6 +66,9 @@ img {
     width: 300px;
     height: 300px;
     overflow: hidden;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+.bio-image-container[data-theme='dark']{
     border: 2px solid white;
 }
 .bio-image{
@@ -68,11 +88,95 @@ img {
 .home-bio-text[data-theme='dark'] h1{
     background-color: black;
 }
-.home-bio-text b{
+.home-bio-text >h1 > b{
     font-weight: bolder;
     text-decoration: underline;
     text-underline-offset: 4px;
 }
+
+/* QUOTATIONS CSS */
+.quotations{
+    font-size: 20px;
+    margin-top: 3em;
+    background-color: black;
+    color: white;
+    width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    text-align: center;
+}
+
+/* Links cards CSS */
+.home-links{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 3em;
+    gap: 16px;
+}
+.links-title{
+    color: white;
+}
+hr{
+    padding: 0;
+    border: none;
+    height: 2px;
+    background-image: -webkit-linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));
+    background-image: -moz-linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));
+    background-image: -ms-linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));
+    background-image: -o-linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));
+    color: white;
+    text-align: center;
+}
+.home-links h2{
+    background-color: black;
+    padding: 16px;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+.list-card{
+    background-color: white;
+    color: black;
+    padding: 1em;
+}
+.list-card[data-theme="dark"]{
+    background-color: black;
+    color: white;
+}
+.card-title{
+    font-weight: bold;
+    text-align: center;
+    background-color: white;
+    color: black;
+    padding: 4px 0;
+}
+.card-list{
+    margin-top: 8px;
+}
+.card-list-item{
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    padding-left: 0;
+}
+.card-list-item a{
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.card-list-item a:hover{
+    text-decoration: underline;
+}
+.card-list-item img{
+    height: 20px;
+}
+
+
+
 @media (max-width: 1280px){
     .home-page-content{
         padding: 4em 2rem;
@@ -83,6 +187,9 @@ img {
     }
     .bio-image{
         height: 200px;
+    }
+    .home-page-content{
+        padding-top: 12em;
     }
 }
 @media (max-width: 800px){
