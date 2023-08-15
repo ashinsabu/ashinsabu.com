@@ -1,19 +1,32 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import './Home.css'
 import '../App.css'
 
+import Header from '../components/Header'
+import HomeNoStyle from './HomeNoStyle'
+
 
 function Home(props) {
+
     const [activeSection, setActiveSection] = useState("links")
     const [withStyles, setWithStyles] = useState(true)
+
     return (
-        <div data-theme = {props.theme} className='home-page-container'>
-            <section key={section} id={section} className="section">
-            <h2>{section}</h2>
-            {/* Add your content here */}
-          </section>
-        </div>
+        <>
+            {withStyles?
+            <div className='home-page-container'>
+                <Header theme={props.theme} setTheme={props.setTheme} setWithStyles={setWithStyles}/>
+                <div className="home-page-content" data-theme={props.theme}>
+                    <section key='home-links-section' id="home-links-section" className="section">
+                        <h2>Test</h2>
+                    </section>
+                </div>
+            </div>    
+            :
+            <HomeNoStyle setWithStyles={setWithStyles}/>
+        }
+        </>
     )
 }
 
