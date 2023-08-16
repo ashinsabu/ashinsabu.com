@@ -1,16 +1,28 @@
-FROM node:20.5.0-alpine3.14
+# Use an official Node.js image as the base image for building
+FROM node:20 AS builder
 
-# Create app directory
 WORKDIR /app
+COPY package*.json ./
 
 # Install app dependencies
-COPY package.json ./
+RUN npm install
 
-RUN npm install 
-
-# Bundle app source
+# Copy the rest of the application code
 COPY . .
 
-EXPOSE 5173
+# Build the React app
+RUN npm run build
 
-CMD [ "npm", "run", "start" ]
+# Use an official Nginx image as the base image for serving content
+FROM nginx:1.21.1-alpine
+
+# Remove the default Nginx content
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY --from=builder /app/nginx/nginx.conf /etc/nginx/nginx.conf
+
+COPY --from=builder /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
