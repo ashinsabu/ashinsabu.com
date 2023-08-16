@@ -318,17 +318,17 @@ function Home(props) {
                                 <h4>Concepts and Classics</h4>
                                 <p>
                                     {"> "}
-                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <img src='https://cdn-icons-png.flaticon.com/512/2702/2702134.png'/>
                                     <a href='http://www.javier8a.com/itc/bd1/articulo.pdf' target='__blank'>Design Patterns</a>
                                 </p>
                                 <p>
                                     {"> "}
-                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <img src='https://cdn-icons-png.flaticon.com/512/2702/2702134.png'/>
                                     <a href='https://github.com/ms2ag16/Books/blob/master/Designing%20Data-Intensive%20Applications%20-%20Martin%20Kleppmann.pdf' target='__blank'>Designing Data Intensive Applications</a>
                                 </p>
                                 <p>
                                     {"> "}
-                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <img src='https://cdn-icons-png.flaticon.com/512/2702/2702134.png'/>
                                     <a href='https://csc-knu.github.io/sys-prog/books/Andrew%20S.%20Tanenbaum%20-%20Operating%20Systems.%20Design%20and%20Implementation.pdf' target='__blank'>Operating Systems: Design and Implementation</a>
                                 </p>
                             </div>
