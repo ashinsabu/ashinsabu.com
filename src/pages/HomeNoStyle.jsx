@@ -12,6 +12,7 @@ function HomeNoStyle(props) {
                 <a href='#links' onClick={withStylesHandler}>Take me back</a>
             </div>
             <div className="nostyle-home-content">
+                WIP
             </div>
         </div>
         
