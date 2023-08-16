@@ -26,7 +26,8 @@ function Header(props) {
             </div>
             <div className="header-links-container">
                 <a href="#links" className="header-link">Links</a>
-                <a href="#skillsandreading" className="header-link">Skills and Reads</a>
+                <a href="#skills" className="header-link">Skills</a>
+                <a href="#reading" className="header-link">Reading</a>
                 <a href="#contactme" className="header-link">Contact Me</a>
             </div>
             <div className="header-theme-container">
