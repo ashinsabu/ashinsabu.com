@@ -273,8 +273,96 @@ function Home(props) {
                         
                     </section>
                     <section key='reading' id="reading" className="section">
-                        
+                        <div className="skills-title">
+                            <h2>Books and Reading Recommendations</h2>
+                        </div>
+                        <div className="reading-subtitle">
+                            <p>These are books and papers I am currently reading or plan to read soon and</p>
+                            <p>recommend if you want to expand your general knowledge of various computer</p>
+                            <p>science concepts and history.</p>
+                        </div>
+                        <div className="list-card read-list" data-theme={props.theme}>
+                            <div className="read-papers">
+                                <h3>Papers and Articles</h3>
+                                <h4>Distributed Systems</h4>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf' target='__blank'> MapReduce <span className='paper-subtitle'>by Google</span></a>
+                                </p>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://research.google/pubs/pub51/' target='__blank'>Google File System <span className='paper-subtitle'>by Google</span></a>
+                                </p>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://research.google/pubs/pub27898/' target='__blank'> BigTable <span className='paper-subtitle'>by Google</span></a>
+                                </p>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.7628' target='__blank'> A note on Distributed Systems <span className='paper-subtitle'>by Jim Waldo</span></a>
+                                </p>
+                                
+                            </div>
+                            <div className="read-books">
+                                <h3>Books</h3>
+                                <h4>Languages</h4>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/2702/2702134.png'/>
+                                    <a href='http://www.cs.uniroma2.it/upload/2017/TSC/The%20Go%20Programming%20Language.pdf' target='__blank'> The Go Programming Language <span className='paper-subtitle'>by Alan & Brian K.</span></a>
+                                </p>
+                                <h4>Concepts and Classics</h4>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='http://www.javier8a.com/itc/bd1/articulo.pdf' target='__blank'>Design Patterns</a>
+                                </p>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://github.com/ms2ag16/Books/blob/master/Designing%20Data-Intensive%20Applications%20-%20Martin%20Kleppmann.pdf' target='__blank'>Designing Data Intensive Applications</a>
+                                </p>
+                                <p>
+                                    {"> "}
+                                    <img src='https://cdn-icons-png.flaticon.com/512/8332/8332640.png'/>
+                                    <a href='https://csc-knu.github.io/sys-prog/books/Andrew%20S.%20Tanenbaum%20-%20Operating%20Systems.%20Design%20and%20Implementation.pdf' target='__blank'>Operating Systems: Design and Implementation</a>
+                                </p>
+                            </div>
+                        </div>
                     </section>
+                    <section key='contactme' id="contactme" className="section">
+                        <div className="skills-title">
+                            <h2>Contact Me</h2>
+                        </div>
+                        <div className="contactme-subtitle">
+                            <p>Feel free to reach out to me on any of the following platforms</p>
+                            <p>or send me an email at <b>
+                                <a href='mailto:ashin.sabu3@gmail.com' target='__blank'>ashin.sabu3@gmail.com</a>
+                            </b></p>
+                        </div>
+                        <div className="list-card" style={{paddingTop: '4px'}} data-theme={props.theme}>
+                            <ul className='card-list'>
+                                <li className='card-list-item'>
+                                    {"> "} <img src='https://cdn-icons-png.flaticon.com/512/174/174857.png'/> <a href='https://www.linkedin.com/in/ashin-sabu-1059a6175/' target='__blank'>LinkedIn</a>
+                                </li>
+                                <li className='card-list-item'>
+                                    {"> "} <img src='https://cdn-icons-png.flaticon.com/512/124/124021.png'/> <a href='https://twitter.com/ashinsabu3/' target='__blank'>Twitter</a>
+                                </li>
+                                <li className='card-list-item'>
+                                    {"> "} <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png'/> <a href='https://www.instagram.com/ashinsabu3/' target='__blank'>Instagram</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </section>
+                </div>
+                <div className="footer" data-theme={props.theme}>
+                    <p>Built with ❤️ by Ashin</p>
+                    <p><img style={{height: '20px'}} src='https://cdn-icons-png.flaticon.com/512/25/25231.png'/><a href='https://github.com/ashinsabu/ashinsabu.com' target='__blank'>View Source Code</a></p>
                 </div>
             </div>    
             :

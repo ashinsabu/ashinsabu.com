@@ -205,6 +205,100 @@ hr{
     margin-top: 3em;
 }
 
+/* Reads section */
+#reading{
+    margin-top: 3em;
+    gap: 32px;
+}
+.reading-subtitle{
+    text-align: center;
+    background-color: white;
+    color: black;
+    padding: 4px 16px;
+}
+.read-list{
+    padding: 2em;
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    width: fit-content;
+    max-width: max-content;
+}
+.read-list a{
+    text-decoration: none;
+    color: inherit;
+}
+.read-list a:hover{
+    text-decoration: underline;
+}
+.read-list h3{
+    font-weight: bold;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    margin-bottom: 12px;
+}
+.read-list h4{
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    margin-top: 16px;
+}
+.read-list p{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.read-list img{
+    height: 32px;
+}
+.read-papers{
+    border-right: 1px solid white;
+    padding-right: 1em;
+}
+.paper-subtitle{
+    color: grey;
+}
+
+/* Contact styles */
+
+#contactme{
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.contactme-subtitle{
+    text-align: center;
+    background-color: white;
+    color: black;
+    padding: 4px 16px;
+}
+.footer{
+    background-color: #C5C5C5;
+    color: black;
+    text-align: center;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.footer p{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.footer a{
+    text-decoration: none;
+    color: inherit;
+}
+.footer a:hover{
+    text-decoration: underline;
+}
+.footer[data-theme="dark"]{
+    background-color: #161616;
+    color: white;
+}
 @media (max-width: 1280px){
     .home-page-content{
         padding: 4em 2rem;
