@@ -188,7 +188,7 @@ function Home(props) {
                         <div className="skills-title">
                             <h2>My Technical Skills</h2>
                         </div>
-                        <div className="list-cards-container" data-theme={props.theme}>
+                        <div className="list-cards-container skills-cards" data-theme={props.theme}>
 
                             <div className="list-card" data-theme={props.theme}> 
                                 <h3 className='card-title'>Languages</h3>
@@ -242,7 +242,7 @@ function Home(props) {
                                         {"> "} <img src='https://icons-for-free.com/download-icon-argocd-1331550886883580947_512.png'/> Argo CD
                                     </li>
                                     <li className='card-list-item'>
-                                        {"> "}<img src='https://static-00.iconduck.com/assets.00/google-gke-icon-512x457-q6s0e3iu.png'/> Google Kubernetes Engine
+                                        {"> "}<img src='https://static-00.iconduck.com/assets.00/google-gke-icon-512x457-q6s0e3iu.png'/> GKE(Google K8s Engine)
                                     </li>
                                     <li className='card-list-item'>
                                         {"> "}<img src='https://cdn4.iconfinder.com/data/icons/google-i-o-2016/512/google_firebase-2-512.png'/> Firebase
