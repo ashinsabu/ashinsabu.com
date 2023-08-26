@@ -192,6 +192,10 @@ hr{
     height: 20px;
 }
 
+.list-item-link{
+    cursor: pointer;
+}
+
 /* SKILLS SECTION */
 
 .skills-title{

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ashin1 from '../assets/ashin.jpeg'
 import ashin2 from '../assets/ashin2.jpeg'
 
-import { Card, Box, Typography, CardContent } from '@mui/material';
+import { Card, Box, Typography, CardContent, List } from '@mui/material';
 
 import './Home.css'
 import '../App.css'
@@ -12,6 +12,7 @@ import HomeNoStyle from './HomeNoStyle'
 import { app } from '../firebase'
 import { getStorage, ref, getDownloadURL, getBlob } from "firebase/storage";
 import { getAnalytics, logEvent } from 'firebase/analytics';
+import ListCard from '../components/ListCard';
 
 const bull = (
     <Box
@@ -100,86 +101,97 @@ function Home(props) {
                                 {/* <hr/> */}
                             </div>
                             <div className="list-cards-container" data-theme={props.theme}>
+                                <ListCard
+                                    cardTitle="Resume"
+                                    theme={props.theme}
+                                    cardList={[
+                                        {
+                                            name: 'View on Drive',
+                                            link: 'https://drive.google.com/file/d/1quHjHg3BrgchFJLni5EfpJGs_0WAhB38/view',
+                                            icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Google_Drive_icon_%282020%29.svg/2295px-Google_Drive_icon_%282020%29.svg.png',
+                                            clickHandler: () => { handleClickLog('driveresume') }
+                                        },
+                                        {
+                                            name: 'Download PDF',
+                                            link: 'https://hellothere',
+                                            icon: 'https://www.iconpacks.net/icons/2/free-pdf-download-icon-2617-thumb.png',
+                                            clickHandler: downloadResume
+                                        }
+                                    ]}
+                                />
+                                <ListCard 
+                                    cardTitle="Social Media" 
+                                    theme={props.theme}
+                                    cardList={[
+                                        {
+                                            name: 'LinkedIn',
+                                            link: 'https://www.linkedin.com/in/ashin-sabu-1059a6175/',
+                                            icon: 'https://cdn-icons-png.flaticon.com/512/174/174857.png',
+                                            clickHandler: () => { handleClickLog('linkedin') }
+                                        },
+                                        {
+                                            name: 'Twitter',
+                                            link: 'https://twitter.com/ashinsabu3/',
+                                            icon: 'https://cdn-icons-png.flaticon.com/512/124/124021.png',
+                                            clickHandler: () => { handleClickLog('twitter') }
+                                        },
+                                        {
+                                            name: 'Instagram',
+                                            link: 'https://www.instagram.com/ashinsabu3/',
+                                            icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png',
+                                            clickHandler: () => { handleClickLog('instagram') }
+                                        }
+                                    ]} 
+                                />
 
-                                <div className="list-card" data-theme={props.theme}> 
-                                    <h3 className='card-title'>Resume</h3>
-                                    <ul className='card-list'>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('driveresume')}} href="https://drive.google.com/file/d/1quHjHg3BrgchFJLni5EfpJGs_0WAhB38/view" target='__blank'>
-                                                {"> "}<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Google_Drive_icon_%282020%29.svg/2295px-Google_Drive_icon_%282020%29.svg.png'/>View on Drive
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={downloadResume} target='__blank'>
-                                                {"> "}<img src='https://www.iconpacks.net/icons/2/free-pdf-download-icon-2617-thumb.png'/>Download PDF
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div className="list-card" data-theme={props.theme}> 
-                                    <h3 className='card-title'>Social Media</h3>
-                                    <ul className='card-list'>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('linkedin')}} href="https://www.linkedin.com/in/ashin-sabu-1059a6175/" target='__blank'>
-                                                {"> "} <img src='https://cdn-icons-png.flaticon.com/512/174/174857.png'/>LinkedIn
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('twitter')}} href="https://twitter.com/ashinsabu3/" target='__blank'>
-                                                {"> "}<img src='https://cdn-icons-png.flaticon.com/512/124/124021.png'/> Twitter
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('instagram')}} href="https://www.instagram.com/ashinsabu3/" target='__blank'>
-                                                {"> "}<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png'/>Instagram
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div className="list-card" data-theme={props.theme}> 
-                                    <h3 className='card-title'>See what I'm building</h3>
-                                    <ul className='card-list'>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('github1')}} href="https://github.com/ashinsabu" target='__blank'>
-                                                {"> "}<img src='https://cdn-icons-png.flaticon.com/512/25/25231.png' alt='github'/>ashinsabu
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('github2')}} href="https://github.com/ashinsabu3" target='__blank'>
-                                                {"> "}<img src='https://cdn-icons-png.flaticon.com/512/25/25231.png' alt='github'/> ashinsabu3
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div className="list-card" data-theme={props.theme}> 
-                                    <h3 className='card-title'>Other Coding Profiles</h3>
-                                    <ul className='card-list'>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('codeforces')}} href="https://codeforces.com/profile/ashin" target='__blank'>
-                                                {"> "}<img src='https://cdn.iconscout.com/icon/free/png-256/free-code-forces-3629285-3031869.png?f=webp' alt='codeforces'/> Codeforces
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('leetcode')}} href="https://leetcode.com/ashinsabu/" target='__blank'>
-                                                {"> "} <img src='https://cdn.iconscout.com/icon/free/png-256/free-leetcode-3521542-2944960.png'/> LeetCode
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('codechef')}} href="https://www.codechef.com/users/ashin_sabu" target='__blank'>
-                                                {"> "}<img src='https://avatars1.githubusercontent.com/u/11960354?s=460&v=4'/> CodeChef
-                                            </a>
-                                        </li>
-                                        <li className='card-list-item'>
-                                            <a onClick={() => {handleClickLog('hackerrank')}} href="https://www.hackerrank.com/ashin_sabu3" target='__blank'>
-                                                {"> "}<img src='https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/160_Hackerrank_logo_logos-512.png'/> Hackerrank
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-
+                                <ListCard
+                                    cardTitle="See what I'm building"
+                                    theme={props.theme}
+                                    cardList={[
+                                        {
+                                            name: 'ashinsabu',
+                                            link: 'https://github.com/ashinsabu',
+                                            icon: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
+                                            clickHandler: () => { handleClickLog('github1') }
+                                        },
+                                        {
+                                            name: 'ashinsabu3',
+                                            link: 'https://github.com/ashinsabu3',
+                                            icon: 'https://cdn-icons-png.flaticon.com/512/25/25231.png',
+                                            clickHandler: () => { handleClickLog('github2') }
+                                        }
+                                    ]}
+                                />
+                                <ListCard
+                                    cardTitle="Other Coding Profiles"
+                                    theme={props.theme}
+                                    cardList={[
+                                        {
+                                            name: 'Codeforces',
+                                            link: 'https://codeforces.com/profile/ashin',
+                                            icon: 'https://cdn.iconscout.com/icon/free/png-256/free-code-forces-3629285-3031869.png?f=webp',
+                                            clickHandler: () => { handleClickLog('codeforces') }
+                                        },
+                                        {
+                                            name: 'LeetCode',
+                                            link: 'https://leetcode.com/ashinsabu/',
+                                            icon: 'https://cdn.iconscout.com/icon/free/png-256/free-leetcode-3521542-2944960.png',
+                                            clickHandler: () => { handleClickLog('leetcode') }
+                                        },
+                                        {
+                                            name: 'CodeChef',
+                                            link: 'https://www.codechef.com/users/ashin_sabu',
+                                            icon: 'https://avatars1.githubusercontent.com/u/11960354?s=460&v=4',
+                                            clickHandler: () => { handleClickLog('codechef') }
+                                        },
+                                        {
+                                            name: 'Hackerrank',
+                                            link: 'https://www.hackerrank.com/ashin_sabu3',
+                                            icon: 'https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/160_Hackerrank_logo_logos-512.png',
+                                            clickHandler: () => { handleClickLog('hackerrank') }
+                                        }
+                                    ]}
+                                />
                             </div>
                         </div>
                     </section>
