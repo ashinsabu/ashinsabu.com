@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import ashin1 from '../assets/ashin.jpeg'
-import ashin2 from '../assets/ashin2.jpeg'
+import ashin3 from '../assets/ashin3.jpg'
 
 import { Card, Box, Typography, CardContent, List } from '@mui/material';
 
@@ -75,7 +74,7 @@ function Home(props) {
                     <section key='links' id="links" className="section">
                         <div className="home-bio">
                             <div className="bio-image-container" data-theme={props.theme}>
-                                <img className='bio-image' src={ashin2} alt='ashin sabu'/>
+                                <img className='bio-image' src={ashin3} alt='ashin sabu'/>
                             </div>
                             <div className="home-bio-text" data-theme={props.theme}>
                                 <h1>Hi, I am <b>Ashin</b></h1>
