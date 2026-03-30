@@ -1,0 +1,11 @@
+.tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background-color: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 2px;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}

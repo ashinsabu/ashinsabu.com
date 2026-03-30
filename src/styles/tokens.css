@@ -1,0 +1,23 @@
+/* DEFAULT: Dark (Vinyl Black) */
+:root {
+  --bg:         #0E0D0B;
+  --bg-card:    #181713;
+  --ink:        #F0EBE1;
+  --ink-muted:  #7A756C;
+  --accent:     #C97A2E;
+  --accent-dim: #2E2218;
+  --rule:       #2A2720;
+  --code-bg:    #1A1915;
+}
+
+/* Light mode (Liner Notes — cream) */
+[data-theme="light"] {
+  --bg:         #FAF8F3;
+  --bg-card:    #F3EFE6;
+  --ink:        #1A1915;
+  --ink-muted:  #7A7670;
+  --accent:     #B8621A;
+  --accent-dim: #E8D5C0;
+  --rule:       #DDD8CE;
+  --code-bg:    #EDEAE2;
+}

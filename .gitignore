@@ -1,4 +1,8 @@
 firebase.js
+CLAUDE.md
+
+# Firebase CLI cache
+.firebase/
 
 # Logs
 logs
@@ -24,3 +28,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+required_links.txt

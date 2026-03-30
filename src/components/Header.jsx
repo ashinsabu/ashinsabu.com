@@ -1,45 +1,50 @@
-import React from 'react';
-import darkModeButton from '../assets/darkModeButton.svg'
-import lightModeButton from '../assets/lightModeButton.svg'
+import { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
+import { trackResumeView } from '../utils/analytics';
+import { links } from '../data/content';
+import '../styles/components/Header.css';
 
-import './Header.css'
-import '../App.css'
+function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  const [progress, setProgress] = useState(0);
 
+  useEffect(() => {
+    const handler = () => {
+      setScrolled(window.scrollY > 60);
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0);
+    };
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
-function Header(props) {
-
-    const themeSwitchHandler = () => {
-        if (props.theme === "dark") {
-            props.setTheme("light")
-        } else {
-            props.setTheme("dark")
-        }
-    }
-    const withStylesHandler = () => {
-        props.setWithStyles(false)
-    }
-
-    return ( 
-        <div className = "header-container" data-theme={props.theme}>
-            <div className="header-logo-container">
-                <h1 className="header-logo">ashinsabu.com</h1>
-            </div>
-            <div className="header-links-container">
-                <a href="#links" className="header-link">Links</a>
-                <a href="#skills" className="header-link">Skills</a>
-                <a href="#reading" className="header-link">Reading</a>
-                <a href="#contactme" className="header-link">Contact Me</a>
-            </div>
-            <div className="header-theme-container">
-                <button className="header-theme-button" onClick={themeSwitchHandler}><
-                    img src={props.theme === 'dark'?darkModeButton:lightModeButton} alt='switch theme to dark'/>
-                </button>
-            </div>
-            <div className="header-switch-styling-container">
-                <p onClick={withStylesHandler}>No CSS please!</p>
-            </div>
-        </div>
-    );
+  return (
+    <header className={`header${scrolled ? ' header-scrolled' : ''}`}>
+      <div className="header-logo">ashinsabu.com</div>
+      <div className="header-right">
+        <nav className="header-nav">
+          <a href="#work" className="header-nav-link">Work</a>
+          <a href="#built" className="header-nav-link">Built</a>
+          <a href="#creative" className="header-nav-link">Creative</a>
+          <a href="#contact" className="header-nav-link">Contact</a>
+        </nav>
+        <a
+          href={links.resume}
+          download="Ashin-Sabu-Resume.pdf"
+          className="header-resume-btn"
+          onClick={trackResumeView}
+        >
+          <Download size={13} />
+          Resume
+        </a>
+      </div>
+      <div
+        className="header-progress-bar"
+        style={{ width: `${progress}%` }}
+        aria-hidden="true"
+      />
+    </header>
+  );
 }
 
 export default Header;

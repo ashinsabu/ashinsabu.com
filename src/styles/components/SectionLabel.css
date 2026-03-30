@@ -1,0 +1,23 @@
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-muted);
+  margin-bottom: 2.5rem;
+}
+
+.section-number {
+  color: var(--accent);
+}
+
+.section-sep {
+  opacity: 0.4;
+}
+
+.section-title {
+  font-variant: small-caps;
+}

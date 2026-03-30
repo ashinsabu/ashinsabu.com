@@ -1,0 +1,63 @@
+.experience-item {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.experience-item:last-child {
+  border-bottom: none;
+}
+
+.experience-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.experience-company {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--ink);
+  display: block;
+}
+
+.experience-role {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--accent);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.experience-period {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  white-space: nowrap;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
+}
+
+.experience-bullets {
+  list-style: none;
+  padding: 0;
+}
+
+.experience-bullets li {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  padding: 0.2rem 0 0.2rem 1.4em;
+  position: relative;
+  line-height: 1.5;
+}
+
+.experience-bullets li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 0.8em;
+  top: 0.35em;
+}

@@ -1,15 +1,32 @@
-import { useState } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
+import Home from './pages/Home';
+import './styles/tokens.css';
+import './styles/base.css';
+import './styles/typography.css';
 
-import './App.css'
-import Home from './pages/Home'
+const Studio = lazy(() => import('./pages/Studio'));
 
 function App() {
-  const [theme, setTheme] = useState("dark")
-  return (
-    <div>
-      <Home theme={theme} setTheme={setTheme}/>
-    </div>
-  )
+  // Easter egg: Ctrl+Shift+K toggles unstyled view
+  useEffect(() => {
+    function handler(e) {
+      if (e.ctrlKey && e.shiftKey && e.key === 'K') {
+        document.body.classList.toggle('no-css');
+      }
+    }
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  if (window.location.pathname === '/studio') {
+    return (
+      <Suspense fallback={null}>
+        <Studio />
+      </Suspense>
+    );
+  }
+
+  return <Home />;
 }
 
-export default App
+export default App;

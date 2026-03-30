@@ -1,0 +1,84 @@
+.contact {
+  padding: 5rem 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.contact-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.contact-email {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  margin-bottom: 2.5rem;
+  line-height: 1.2;
+}
+
+.contact-email a {
+  color: var(--ink);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 3px;
+}
+
+.contact-email a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.contact-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  transition: color 0.15s ease;
+}
+
+.contact-link:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* Resume CTA block */
+.contact-resume {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.contact-resume-btn {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--bg);
+  background-color: var(--accent);
+  padding: 12px 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease;
+}
+
+.contact-resume-btn:hover {
+  background-color: var(--ink);
+  text-decoration: none;
+}
+
+.contact-resume-sub {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+}

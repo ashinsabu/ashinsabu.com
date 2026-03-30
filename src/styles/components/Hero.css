@@ -1,0 +1,153 @@
+.hero {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  height: 100vh;
+  height: 100svh;
+}
+
+/* ── Photo column ─────────────────────────────── */
+.hero-photo {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Portrait — keep face in frame, not feet */
+  object-position: center 15%;
+  display: block;
+  /* Fade the right edge into the background — seamless blend */
+  mask-image:
+    linear-gradient(to right, black 55%, transparent 92%),
+    linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(to right, black 55%, transparent 92%),
+    linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-composite: destination-in;
+  /* Subtle treatment to blend warm tones with dark bg */
+  filter: brightness(0.88) contrast(1.05) saturate(1.08);
+}
+
+/* ── Text column ──────────────────────────────── */
+.hero-text {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 5rem 4rem 3rem 2rem;
+  overflow: hidden;
+}
+
+/* Vinyl record — the one eye-catching element */
+.vinyl-wrapper {
+  position: absolute;
+  right: -180px;
+  bottom: -150px;
+  pointer-events: none;
+}
+
+.vinyl-record {
+  width: 660px;
+  height: 660px;
+  display: block;
+  opacity: 0.82;
+  animation: spin-vinyl 18s linear infinite;
+}
+
+@keyframes spin-vinyl {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Text content sits above the vinyl */
+.hero-text-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-role {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 1.5rem;
+}
+
+.hero-name {
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 9vw, 8rem);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 2rem;
+}
+
+.hero-bio {
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  color: var(--ink-muted);
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50vh auto;
+    grid-template-rows: 50svh auto;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  .hero-photo img {
+    height: 100%;
+    object-position: center 20%;
+    mask-image:
+      linear-gradient(to bottom, black 55%, transparent 95%),
+      linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image:
+      linear-gradient(to bottom, black 55%, transparent 95%),
+      linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    mask-composite: intersect;
+    -webkit-mask-composite: destination-in;
+  }
+
+  .hero-text {
+    padding: 2rem 1.5rem 2.5rem;
+    overflow: hidden;
+  }
+
+  .vinyl-wrapper {
+    right: -60px;
+    bottom: -60px;
+  }
+
+  .vinyl-record {
+    width: 240px;
+    height: 240px;
+    opacity: 0.65;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-name {
+    font-size: clamp(3rem, 15vw, 4rem);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-role {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    margin-bottom: 1rem;
+  }
+
+  .hero-bio {
+    font-size: var(--text-base);
+  }
+}

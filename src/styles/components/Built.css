@@ -1,0 +1,9 @@
+.built {
+  padding: 5rem 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.built-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
