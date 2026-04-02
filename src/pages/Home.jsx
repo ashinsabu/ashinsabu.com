@@ -7,9 +7,19 @@ import Creative from '../components/sections/Creative';
 import Contact from '../components/sections/Contact';
 import Footer from '../components/layout/Footer';
 import { useOverrides } from '../hooks/useOverrides';
+import vinylSvg from '../assets/icons/vinyl.svg';
 
 function Home() {
-  const overrides = useOverrides();
+  const { overrides, ready } = useOverrides();
+
+  if (!ready) {
+    return (
+      <div className="page-loader">
+        <img src={vinylSvg} className="loader-vinyl" alt="" />
+        <p className="loader-text">side a.</p>
+      </div>
+    );
+  }
 
   return (
     <>

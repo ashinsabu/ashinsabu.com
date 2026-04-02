@@ -45,6 +45,49 @@ button {
   color: inherit;
 }
 
+/* Full-page loader */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  background: var(--bg);
+}
+
+.loader-vinyl {
+  width: 160px;
+  height: 160px;
+  opacity: 0.82;
+  animation: spin-vinyl 3s linear infinite;
+}
+
+.loader-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  letter-spacing: 0.2em;
+}
+
+/* Section stagger reveal */
+@keyframes sectionReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+main > * {
+  animation: sectionReveal 0.5s ease both;
+}
+
+main > *:nth-child(1) { animation-delay: 0.05s; }
+main > *:nth-child(2) { animation-delay: 0.15s; }
+main > *:nth-child(3) { animation-delay: 0.25s; }
+main > *:nth-child(4) { animation-delay: 0.35s; }
+main > *:nth-child(5) { animation-delay: 0.45s; }
+main > *:nth-child(6) { animation-delay: 0.55s; }
+
 /* "No CSS" easter egg — Ctrl+Shift+K */
 body.no-css * {
   all: unset !important;

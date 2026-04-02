@@ -5,9 +5,16 @@ import { useState, useEffect } from 'react';
 // Used by Home.jsx to apply studio edits over content.js defaults.
 export function useOverrides() {
   const [overrides, setOverrides] = useState({});
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+
+    // After 1s, give up waiting and show defaults
+    const timeout = setTimeout(() => {
+      if (!cancelled) setReady(true);
+    }, 1000);
+
     async function load() {
       try {
         const mod = await import('../firebase');
@@ -18,14 +25,19 @@ export function useOverrides() {
           setOverrides(snap.val());
         }
       } catch {
-        // Firebase not configured or RTDB unavailable — use content.js defaults
+        // Firebase not configured or RTDB unavailable — fall through to finally
+      } finally {
+        clearTimeout(timeout);
+        if (!cancelled) setReady(true);
       }
     }
+
     load();
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
     };
   }, []);
 
-  return overrides;
+  return { overrides, ready };
 }
