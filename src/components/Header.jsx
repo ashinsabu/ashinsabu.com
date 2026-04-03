@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { trackResumeView } from '../utils/analytics';
-import { links } from '../data/content';
+import { downloadResume } from '../utils/resumeDownload';
 import '../styles/components/Header.css';
 
 function Header() {
@@ -29,10 +29,9 @@ function Header() {
           <a href="#contact" className="header-nav-link">Contact</a>
         </nav>
         <a
-          href={links.resume}
-          download="Ashin-Sabu-Resume.pdf"
+          href="/resume.pdf"
           className="header-resume-btn"
-          onClick={trackResumeView}
+          onClick={e => { e.preventDefault(); trackResumeView(); downloadResume(); }}
         >
           <Download size={13} />
           Resume

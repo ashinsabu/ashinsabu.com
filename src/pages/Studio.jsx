@@ -11,6 +11,7 @@ import {
 } from '../utils/studioAuth';
 import '../styles/Studio.css';
 
+
 const RTDB_RULES = `{
   "rules": {
     "s": {
@@ -30,10 +31,10 @@ function Studio() {
   const [error, setError] = useState('');
   const [lockoutMs, setLockoutMs] = useState(0);
   const [overrides, setOverrides] = useState({});
+  const [resumeB64, setResumeB64] = useState(null);
   const [savedHash, setSavedHash] = useState(null);
   const [status, setStatus] = useState('');
   const [db, setDb] = useState(null);
-  const [app, setApp] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
   // loadOverrides is used both from the init effect and from handleLogin/handleSetPassword.
@@ -41,8 +42,12 @@ function Studio() {
   // (user-triggered handlers) run while the component is definitely mounted.
   const loadOverrides = useCallback(async (database) => {
     const { ref, get } = await import('firebase/database');
-    const snap = await get(ref(database, 'ov/data'));
-    if (snap.exists()) setOverrides(snap.val());
+    const [dataSnap, b64Snap] = await Promise.all([
+      get(ref(database, 'ov/data')),
+      get(ref(database, 'ov/resume_b64')),
+    ]);
+    if (dataSnap.exists()) setOverrides(dataSnap.val());
+    if (b64Snap.exists()) setResumeB64(b64Snap.val());
   }, []);
 
   useEffect(() => {
@@ -60,7 +65,6 @@ function Studio() {
         // Store db/app refs — safe to call even if cancelled right after,
         // since setDb/setApp don't trigger re-renders that matter post-unmount.
         setDb(database);
-        setApp(mod.app);
 
         if (isLockedOut()) {
           if (!cancelled) { setLockoutMs(getLockoutRemaining()); setState('locked'); }
@@ -165,32 +169,30 @@ function Studio() {
     setStatus('Saving...');
     try {
       const { ref, set } = await import('firebase/database');
-      await set(ref(db, 'ov'), { _a: savedHash, data: overrides });
+      const payload = { _a: savedHash, data: overrides };
+      if (resumeB64) payload.resume_b64 = resumeB64;
+      await set(ref(db, 'ov'), payload);
       setStatus('Saved.');
       setTimeout(() => setStatus(''), 2500);
-    } catch {
-      setStatus('Save failed. Check RTDB write rules.');
+    } catch (err) {
+      setStatus(`Save failed: ${err?.message || err}`);
     }
   }
 
-  async function handleResumeUpload(e) {
+  function handleResumeFile(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.type !== 'application/pdf') { setStatus('Must be a PDF.'); return; }
-    setStatus('Uploading...');
-    try {
-      const { getStorage, ref: sref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-      const storage = getStorage(app);
-      const fileRef = sref(storage, 'resume/resume.pdf');
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setResumeB64(reader.result);
       const year = new Date().getFullYear();
-      setOverrides(prev => ({ ...prev, resume_url: url, resume_label: `PDF · Updated ${year}` }));
-      setStatus('Uploaded. Click Save to apply.');
-    } catch {
-      setStatus('Upload failed. Check Firebase Storage config.');
-    }
+      setOverrides(prev => ({ ...prev, resume_label: `PDF · Updated ${year}` }));
+      setStatus('PDF ready. Click Save to apply.');
+    };
+    reader.readAsDataURL(file);
   }
+
 
   function handleLogout() {
     clearSession();
@@ -205,6 +207,7 @@ function Studio() {
   if (state === 'checking') {
     return <div className="studio"><p className="studio-init">Initializing...</p></div>;
   }
+
 
   if (state === 'needs-rules') {
     return (
@@ -357,16 +360,16 @@ function Studio() {
 
         <section className="studio-section">
           <label className="studio-section-title">Resume</label>
-          <p className="studio-hint">Upload a PDF — replaces the download URL and auto-sets the label.</p>
+          <p className="studio-hint">Upload a PDF. Stored in RTDB, decoded in-browser on download. Falls back to /resume.pdf in the repo.</p>
           <input
             type="file"
             accept="application/pdf"
-            onChange={handleResumeUpload}
+            onChange={handleResumeFile}
             className="studio-file"
           />
-          {overrides.resume_url && (
+          {resumeB64 && (
             <p className="studio-hint" style={{ marginTop: '0.5rem' }}>
-              Current: <a href={overrides.resume_url} target="_blank" rel="noopener noreferrer" className="studio-link">view ↗</a>
+              {status.startsWith('PDF ready') ? 'Loaded — not saved yet.' : 'Resume stored.'}
             </p>
           )}
         </section>

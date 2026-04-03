@@ -59,7 +59,7 @@ function Home() {
         <Work />
         <Built />
         <Creative creativeBio={overrides.creative_bio} />
-        <Contact resumeLabel={overrides.resume_label} resumeUrl={overrides.resume_url} />
+        <Contact resumeLabel={overrides.resume_label} />
       </main>
       <Footer />
     </>

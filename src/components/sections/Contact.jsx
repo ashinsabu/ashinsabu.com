@@ -1,11 +1,12 @@
-import { contact, links } from '../../data/content';
+import { contact } from '../../data/content';
+import { downloadResume } from '../../utils/resumeDownload';
 import SectionLabel from '../ui/SectionLabel';
 import { useSectionView } from '../../hooks/useSectionView';
 import { trackLinkClick, trackResumeView } from '../../utils/analytics';
 import { Github, Linkedin, Download } from 'lucide-react';
 import '../../styles/components/Contact.css';
 
-function Contact({ resumeLabel, resumeUrl }) {
+function Contact({ resumeLabel }) {
   const ref = useSectionView('contact');
 
   return (
@@ -64,10 +65,9 @@ function Contact({ resumeLabel, resumeUrl }) {
         {/* Resume CTA — prominent, serves all audiences */}
         <div className="contact-resume">
           <a
-            href={resumeUrl || links.resume}
-            download="Ashin-Sabu-Resume.pdf"
+            href="/resume.pdf"
             className="contact-resume-btn"
-            onClick={trackResumeView}
+            onClick={e => { e.preventDefault(); trackResumeView(); downloadResume(); }}
           >
             <Download size={16} />
             Download Resume
