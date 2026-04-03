@@ -27,6 +27,25 @@ function fmtTs(ms) {
 
 const SECTION_ORDER = ['hero', 'work', 'opensource', 'thinking', 'creative', 'contact'];
 
+// Display-layer mapping for referrer strings — covers both current named values and
+// legacy `o:hostname` blobs written before the writer knew about these domains.
+// Never mutates stored data — purely for rendering.
+const REF_DISPLAY = {
+  google: 'Google', bing: 'Bing', duckduckgo: 'DuckDuckGo',
+  instagram: 'Instagram', twitter: 'Twitter', linkedin: 'LinkedIn',
+  github: 'GitHub', medium: 'Medium', direct: 'Direct',
+  'o:t.co': 'Twitter', 'o:lnkd.in': 'LinkedIn',
+  'o:l.instagram.com': 'Instagram', 'o:medium.com': 'Medium',
+  'o:duckduckgo.com': 'DuckDuckGo',
+};
+
+function formatRef(ref) {
+  if (!ref) return 'Direct';
+  if (REF_DISPLAY[ref]) return REF_DISPLAY[ref];
+  if (ref.startsWith('o:')) return ref.slice(2); // unknown hostname — strip prefix
+  return ref;
+}
+
 // ── Filter helpers ────────────────────────────────────────────────────────────
 
 function matchSource(ref, bucket) {
@@ -338,7 +357,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
       {s.referrers.length > 0 && (
         <div className="an-section">
           <p className="an-section-label">Where they came from</p>
-          <BarChart rows={s.referrers} />
+          <BarChart rows={s.referrers.map(([ref, count]) => [formatRef(ref), count])} />
         </div>
       )}
 
@@ -432,7 +451,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
             {s.recent.map((sess, i) => (
               <div key={i} className="an-session-row">
                 <span className="an-session-ts">{fmtTs(sess.ts)}</span>
-                <span className="an-session-ref">{sess.ref || 'direct'}</span>
+                <span className="an-session-ref">{formatRef(sess.ref)}</span>
                 <span className="an-session-dev">{sess.dev || '?'}</span>
                 <span className="an-session-dur">{fmtDur(sess.dur)}</span>
                 <span className="an-session-scroll">{sess.scroll != null ? `${sess.scroll}%` : '—'}</span>
