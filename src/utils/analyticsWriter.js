@@ -56,12 +56,14 @@ function getSessionContext() {
   const rawRef = document.referrer;
   const ref =
     !rawRef ? 'direct' :
-    /google\./i.test(rawRef)   ? 'google' :
-    /bing\./i.test(rawRef)     ? 'bing' :
-    /instagram\.com/i.test(rawRef) ? 'instagram' :
-    /twitter\.com|x\.com/i.test(rawRef) ? 'twitter' :
-    /linkedin\.com/i.test(rawRef) ? 'linkedin' :
-    /github\.com/i.test(rawRef)   ? 'github' :
+    /google\./i.test(rawRef)              ? 'google' :
+    /bing\./i.test(rawRef)                ? 'bing' :
+    /duckduckgo\.com/i.test(rawRef)       ? 'duckduckgo' :
+    /instagram\.com|l\.instagram\.com/i.test(rawRef) ? 'instagram' :
+    /twitter\.com|x\.com|t\.co/i.test(rawRef)        ? 'twitter' :
+    /linkedin\.com|lnkd\.in/i.test(rawRef)           ? 'linkedin' :
+    /github\.com/i.test(rawRef)           ? 'github' :
+    /medium\.com/i.test(rawRef)           ? 'medium' :
     (() => {
       try { return `o:${new URL(rawRef).hostname}`; } catch { return 'other'; }
     })();

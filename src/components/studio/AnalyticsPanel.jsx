@@ -31,8 +31,8 @@ const SECTION_ORDER = ['hero', 'work', 'opensource', 'thinking', 'creative', 'co
 
 function matchSource(ref, bucket) {
   if (!ref || ref === 'direct') return bucket === 'direct';
-  if (ref === 'google' || ref === 'bing') return bucket === 'search';
-  if (ref === 'instagram' || ref === 'twitter' || ref === 'linkedin') return bucket === 'social';
+  if (ref === 'google' || ref === 'bing' || ref === 'duckduckgo') return bucket === 'search';
+  if (['instagram', 'twitter', 'linkedin', 'github', 'medium'].includes(ref)) return bucket === 'social';
   return bucket === 'other';
 }
 
