@@ -297,6 +297,30 @@ function Studio() {
         </div>
 
         <section className="studio-section">
+          <label className="studio-section-title">About — paragraph 1</label>
+          <p className="studio-hint">The technical intro paragraph in the Who section.</p>
+          <textarea
+            className="studio-textarea"
+            rows={5}
+            value={overrides.about_p1 || ''}
+            onChange={e => setOverrides(prev => ({ ...prev, about_p1: e.target.value }))}
+            placeholder="I'm a software engineer at Harness.io..."
+          />
+        </section>
+
+        <section className="studio-section">
+          <label className="studio-section-title">About — paragraph 2</label>
+          <p className="studio-hint">The personal paragraph in the Who section.</p>
+          <textarea
+            className="studio-textarea"
+            rows={4}
+            value={overrides.about_p2 || ''}
+            onChange={e => setOverrides(prev => ({ ...prev, about_p2: e.target.value }))}
+            placeholder="Outside of engineering, I make music and visual art..."
+          />
+        </section>
+
+        <section className="studio-section">
           <label className="studio-section-title">Role label</label>
           <p className="studio-hint">Above your name in the hero. Update when title or company changes.</p>
           <input

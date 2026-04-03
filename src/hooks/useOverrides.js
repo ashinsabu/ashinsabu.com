@@ -9,10 +9,11 @@ export function useOverrides() {
 
   useEffect(() => {
     let cancelled = false;
+    let timedOut = false;
 
-    // After 1s, give up waiting and show defaults
+    // After 1s, give up and show defaults — any late RTDB response is ignored
     const timeout = setTimeout(() => {
-      if (!cancelled) setReady(true);
+      if (!cancelled) { timedOut = true; setReady(true); }
     }, 1000);
 
     async function load() {
@@ -21,7 +22,8 @@ export function useOverrides() {
         const { getDatabase, ref, get } = await import('firebase/database');
         const db = getDatabase(mod.app);
         const snap = await get(ref(db, 'ov/data'));
-        if (!cancelled && snap.exists()) {
+        // Discard result if timeout already fired — prevents late flash
+        if (!cancelled && !timedOut && snap.exists()) {
           setOverrides(snap.val());
         }
       } catch {

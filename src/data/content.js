@@ -5,6 +5,18 @@ export const meta = {
   email: 'ashin.sabu3@gmail.com',
 };
 
+const _dob = new Date(2002, 10, 10); // Nov 10 2002 (month is 0-indexed)
+const _today = new Date();
+const _age = _today.getFullYear() - _dob.getFullYear()
+  - (_today < new Date(_today.getFullYear(), 10, 10) ? 1 : 0);
+
+export const about = {
+  paragraphs: [
+    `I'm a software engineer, ${_age}, based in Bengaluru. I build distributed systems and I'm a little obsessed with understanding software at the level where abstractions give out. Go and Java in production, Rust and C++ always pulling at the edges. What actually happens in a gRPC call crossing a cluster boundary. Why a Redis Stream backpressure curve looks the way it does under load. That curiosity shapes how I work: ship the simple thing first, profile before optimizing, reach for abstraction only when not having one is genuinely expensive.`,
+    "Outside of engineering, I make music and visual art. Working on a particular vocal sound. I think about building companies a lot, read wherever the interest takes me, and am currently somewhere in Zero to One.",
+  ],
+};
+
 export const projects = [
   {
     id: 'licensing',
