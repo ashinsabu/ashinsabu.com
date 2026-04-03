@@ -127,10 +127,19 @@ function Studio() {
           if (snap.exists() && snap.val() === sessionHash) {
             setSavedHash(sessionHash);
             await loadOverrides(database);
-            // Restore private key from sessionStorage-cached wrapping key
+            // Restore private key from sessionStorage-cached wrapping key.
+            // If wrap key is missing (e.g. new tab), fall through to login so the
+            // user re-enters their password and gets analytics. Don't silently skip it.
             const pk = await loadPrivateKeyFromSession(database);
-            if (!cancelled && pk) setPrivateKey(pk);
-            if (!cancelled) setState('dashboard');
+            if (cancelled) return;
+            if (pk) {
+              setPrivateKey(pk);
+              setState('dashboard');
+            } else {
+              // Session is valid but wrap key isn't in this tab's sessionStorage.
+              // savedHash is already set — login will be instant.
+              setState('login');
+            }
             return;
           }
           clearSession();
