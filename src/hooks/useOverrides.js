@@ -11,10 +11,10 @@ export function useOverrides() {
     let cancelled = false;
     let timedOut = false;
 
-    // After 1s, give up and show defaults — any late RTDB response is ignored
+    // After 5s, give up and show defaults — any late RTDB response is ignored
     const timeout = setTimeout(() => {
       if (!cancelled) { timedOut = true; setReady(true); }
-    }, 1000);
+    }, 5000);
 
     async function load() {
       try {
