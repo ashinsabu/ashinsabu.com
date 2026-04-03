@@ -1,5 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
+import { ChevronDown } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from 'recharts';
 import { decryptPayload } from '../../utils/analyticsEncrypt.js';
+import { EV } from '../../utils/analyticsSchema.js';
+import { loadDeleteToken } from '../../utils/studioAuth.js';
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
 
@@ -99,7 +106,7 @@ function aggregate(payloads) {
     if (p.ts < s.ts) s.ts = p.ts;
 
     s.events.push(p.e);
-    if (p.e === 'ex') { s.scroll = p.scroll; s.dur = p.dur; }
+    if (p.e === EV.EXIT) { s.scroll = p.scroll; s.dur = p.dur; }
   }
 
   const sessionList = Object.values(sessions).sort((a, b) => b.ts - a.ts);
@@ -125,14 +132,14 @@ function aggregate(payloads) {
   const linkCtx = {};   // lc: by originating section (ctx)
 
   for (const p of payloads) {
-    if (p.e === 'sv' && p.sec) increment(sectionCounts, p.sec);
-    if (p.e === 'sd' && p.sec && typeof p.dwell === 'number') {
+    if (p.e === EV.SECTION_VIEW && p.sec) increment(sectionCounts, p.sec);
+    if (p.e === EV.SECTION_DWELL && p.sec && typeof p.dwell === 'number') {
       sectionDwellTotal[p.sec] = (sectionDwellTotal[p.sec] || 0) + p.dwell;
       sectionDwellCount[p.sec] = (sectionDwellCount[p.sec] || 0) + 1;
     }
-    if (p.e === 'pe' && p.pid) increment(projects, p.pid);
-    if (p.e === 'rv') increment(resumeCtx, p.ctx || 'unknown');
-    if (p.e === 'lc') {
+    if (p.e === EV.PROJECT_EXPAND && p.pid) increment(projects, p.pid);
+    if (p.e === EV.RESUME_VIEW) increment(resumeCtx, p.ctx || 'unknown');
+    if (p.e === EV.LINK_CLICK) {
       if (p.lt)  increment(linkTypes, p.lt);
       if (p.ctx) increment(linkCtx, p.ctx);
     }
@@ -145,6 +152,7 @@ function aggregate(payloads) {
 
   return {
     total,
+    allSessions: sessionList,
     avgScroll: scrollCount ? Math.round(totalScroll / scrollCount) : null,
     avgDur:    durCount    ? Math.round(totalDur / durCount)        : null,
     referrers:     topN(referrers, 7),
@@ -180,6 +188,115 @@ function BarChart({ rows, maxVal }) {
   );
 }
 
+// ── Visit density (time-series histogram) ────────────────────────────────────
+
+function buildDensity(sessions, range) {
+  if (!sessions.length) return [];
+  const now = Date.now();
+
+  let bucketMs, start;
+  if (range === '7d') {
+    bucketMs = 6 * 3600_000;          // 6-hour buckets → 28 bars
+    start = now - 7 * 86400_000;
+  } else if (range === '30d') {
+    bucketMs = 86400_000;             // daily → 30 bars
+    start = now - 30 * 86400_000;
+  } else if (range === '90d') {
+    bucketMs = 7 * 86400_000;         // weekly → ~13 bars
+    start = now - 90 * 86400_000;
+  } else {
+    const earliest = Math.min(...sessions.map(s => s.ts));
+    const spanMs = now - earliest;
+    bucketMs = spanMs > 365 * 86400_000 ? 30 * 86400_000 : 7 * 86400_000;
+    start = earliest;
+  }
+
+  const numBuckets = Math.max(1, Math.ceil((now - start) / bucketMs));
+  const counts = new Array(numBuckets).fill(0);
+
+  for (const s of sessions) {
+    const idx = Math.floor((s.ts - start) / bucketMs);
+    if (idx >= 0 && idx < numBuckets) counts[idx]++;
+  }
+
+  return counts.map((count, i) => {
+    const t = start + i * bucketMs;
+    const d = new Date(t);
+    const label = range === '7d'
+      ? d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', hour12: false })
+      : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return { label, count };
+  });
+}
+
+function DensityTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const count = payload[0].value;
+  return (
+    <div className="an-density-tooltip">
+      <span className="an-density-tooltip-label">{label}</span>
+      <span className="an-density-tooltip-val">{count} session{count !== 1 ? 's' : ''}</span>
+    </div>
+  );
+}
+
+function DensityChart({ buckets }) {
+  return (
+    <ResponsiveContainer width="100%" height={120}>
+      <AreaChart data={buckets} margin={{ top: 6, right: 4, left: -28, bottom: 0 }}>
+        <defs>
+          <linearGradient id="densityGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%"  stopColor="var(--accent)" stopOpacity={0.4} />
+            <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" vertical={false} />
+        <XAxis
+          dataKey="label"
+          interval="preserveStartEnd"
+          tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--ink-muted)' }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--ink-muted)' }}
+          tickLine={false}
+          axisLine={false}
+          width={28}
+        />
+        <Tooltip content={<DensityTooltip />} cursor={{ stroke: 'var(--rule)', strokeWidth: 1 }} />
+        <Area
+          type="monotone"
+          dataKey="count"
+          stroke="var(--accent)"
+          strokeWidth={1.5}
+          fill="url(#densityGrad)"
+          dot={false}
+          activeDot={{ r: 3, fill: 'var(--accent)', stroke: 'var(--bg)', strokeWidth: 2 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ── Collapsible section wrapper ───────────────────────────────────────────────
+
+function CollapsibleSection({ id, label, collapsed, onToggle, children }) {
+  return (
+    <div className="an-section">
+      <div className="an-section-header" onClick={() => onToggle(id)}>
+        <span className="an-section-label">{label}</span>
+        <ChevronDown
+          size={11}
+          className={`an-chevron${collapsed ? ' an-chevron--collapsed' : ''}`}
+        />
+      </div>
+      {!collapsed && children}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const INIT_FILTER = { range: 'all', device: 'all', source: 'all' };
@@ -191,12 +308,28 @@ export default function AnalyticsPanel({ db, privateKey }) {
   const [schemaUnknown, setSchemaUnknown] = useState(0);
   const [cleanupState, setCleanupState]   = useState('idle');
   const [filter, setFilter]               = useState(INIT_FILTER);
+  const [collapsed, setCollapsed]         = useState(
+    () => new Set(['density', 'referrers', 'sections', 'resume', 'projects', 'links', 'device', 'timezones', 'recent'])
+  );
 
   // Recomputed in-memory whenever payloads or filter changes — no re-fetch needed
   const stats = useMemo(
     () => loadState === 'loaded' ? aggregate(applyFilters(allPayloads, filter)) : null,
     [allPayloads, filter, loadState]
   );
+
+  const densityBuckets = useMemo(
+    () => stats ? buildDensity(stats.allSessions, filter.range) : [],
+    [stats, filter.range]
+  );
+
+  function toggleSection(id) {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   const loadAnalytics = useCallback(async () => {
     setLoadState('loading');
@@ -239,7 +372,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
 
   async function deleteGarbage() {
     if (garbage.length === 0) return;
-    const deleteToken = sessionStorage.getItem('studio_delete_token');
+    const deleteToken = loadDeleteToken();
     if (!deleteToken) return;
     setCleanupState('deleting');
     try {
@@ -353,18 +486,24 @@ export default function AnalyticsPanel({ db, privateKey }) {
         </div>
       </div>
 
+      {/* Traffic over time */}
+      <CollapsibleSection id="density" label="Traffic over time" collapsed={collapsed.has('density')} onToggle={toggleSection}>
+        {densityBuckets.length > 0
+          ? <DensityChart buckets={densityBuckets} />
+          : <p className="studio-hint">No sessions in this range.</p>
+        }
+      </CollapsibleSection>
+
       {/* Referrer */}
       {s.referrers.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Where they came from</p>
+        <CollapsibleSection id="referrers" label="Where they came from" collapsed={collapsed.has('referrers')} onToggle={toggleSection}>
           <BarChart rows={s.referrers.map(([ref, count]) => [formatRef(ref), count])} />
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Section funnel */}
       {sectionRows.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Section reach</p>
+        <CollapsibleSection id="sections" label="Section reach" collapsed={collapsed.has('sections')} onToggle={toggleSection}>
           <div className="an-chart">
             {sectionRows.map(([sec, count]) => {
               const max = Math.max(...sectionRows.map(r => r[1]), 1);
@@ -381,29 +520,26 @@ export default function AnalyticsPanel({ db, privateKey }) {
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Resume click sources */}
       {s.resumeCtx.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Resume — where they clicked</p>
+        <CollapsibleSection id="resume" label="Resume — where they clicked" collapsed={collapsed.has('resume')} onToggle={toggleSection}>
           <BarChart rows={s.resumeCtx} />
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Projects */}
       {s.projects.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Project opens</p>
+        <CollapsibleSection id="projects" label="Project opens" collapsed={collapsed.has('projects')} onToggle={toggleSection}>
           <BarChart rows={s.projects} />
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Link clicks */}
       {s.linkTypes.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Link clicks</p>
+        <CollapsibleSection id="links" label="Link clicks" collapsed={collapsed.has('links')} onToggle={toggleSection}>
           <BarChart rows={s.linkTypes} />
           {s.linkCtx.length > 0 && (
             <div className="an-link-ctx">
@@ -412,41 +548,41 @@ export default function AnalyticsPanel({ db, privateKey }) {
               ))}
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Device + browser */}
-      <div className="an-section an-pills-row">
-        <div>
-          <p className="an-section-label">Device</p>
-          <div className="an-pills">
-            {s.devices.map(([k, v]) => (
-              <span key={k} className="an-pill">{k} <strong>{v}</strong></span>
-            ))}
+      <CollapsibleSection id="device" label="Device & browser" collapsed={collapsed.has('device')} onToggle={toggleSection}>
+        <div className="an-pills-row">
+          <div>
+            <p className="an-section-label">Device</p>
+            <div className="an-pills">
+              {s.devices.map(([k, v]) => (
+                <span key={k} className="an-pill">{k} <strong>{v}</strong></span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="an-section-label">Browser</p>
+            <div className="an-pills">
+              {s.browsers.map(([k, v]) => (
+                <span key={k} className="an-pill">{k} <strong>{v}</strong></span>
+              ))}
+            </div>
           </div>
         </div>
-        <div>
-          <p className="an-section-label">Browser</p>
-          <div className="an-pills">
-            {s.browsers.map(([k, v]) => (
-              <span key={k} className="an-pill">{k} <strong>{v}</strong></span>
-            ))}
-          </div>
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Timezones */}
       {s.timezones.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Where in the world</p>
+        <CollapsibleSection id="timezones" label="Where in the world" collapsed={collapsed.has('timezones')} onToggle={toggleSection}>
           <BarChart rows={s.timezones} />
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Recent sessions */}
       {s.recent.length > 0 && (
-        <div className="an-section">
-          <p className="an-section-label">Recent sessions</p>
+        <CollapsibleSection id="recent" label="Recent sessions" collapsed={collapsed.has('recent')} onToggle={toggleSection}>
           <div className="an-session-feed">
             {s.recent.map((sess, i) => (
               <div key={i} className="an-session-row">
@@ -458,7 +594,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Cleanup notice */}
@@ -467,7 +603,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
           <span className="studio-hint">
             {garbage.length} blob{garbage.length !== 1 ? 's' : ''} failed decryption (fake writes).
           </span>
-          {sessionStorage.getItem('studio_delete_token') ? (
+          {loadDeleteToken() ? (
             <button
               className="studio-logout-btn"
               onClick={deleteGarbage}

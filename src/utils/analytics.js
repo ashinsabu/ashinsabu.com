@@ -1,5 +1,6 @@
 import { logEvent } from 'firebase/analytics';
 import { writeAnalyticsEvent } from './analyticsWriter.js';
+import { EV, ev } from './analyticsSchema.js';
 
 // analytics is initialized in firebase.js (gitignored). If it doesn't exist
 // (CI, local without config), all tracking calls become no-ops.
@@ -34,7 +35,7 @@ function sendExitEvent() {
   _exitSent = true;
   const dur = Math.round((Date.now() - _pageStart) / 1000);
   // writeAnalyticsEvent is fire-and-forget — safe to call in beforeunload
-  writeAnalyticsEvent('ex', { scroll: _maxScroll, dur });
+  writeAnalyticsEvent(EV.EXIT, ev.exit(_maxScroll, dur));
 }
 
 if (typeof window !== 'undefined') {
@@ -52,43 +53,36 @@ if (typeof window !== 'undefined') {
 }
 
 // ── Tracked events ───────────────────────────────────────────────────────────
+//
+// To add a new event:
+//   1. Add a key to EV and a builder to ev in analyticsSchema.js
+//   2. Export a trackXxx function here using that builder
+//   3. Add aggregation + render block in AnalyticsPanel.jsx
 
-// To add a new tracked event: add a trackXxx export here that calls writeAnalyticsEvent
-// with a short event code (e.g. 'ab') and a flat data object. Then add the aggregation
-// in AnalyticsPanel's aggregate() and a display block in its render output.
 export function trackLinkClick(linkType, destination, ctx) {
   track('link_click', { link_type: linkType, destination });
-  writeAnalyticsEvent('lc', { lt: linkType, dst: destination, ...(ctx ? { ctx } : {}) });
+  writeAnalyticsEvent(EV.LINK_CLICK, ev.linkClick(linkType, destination, ctx));
 }
 
-// ctx: where on the page the download was triggered (e.g. 'header', 'contact')
-// Extensible — pass ctx wherever trackResumeView is called.
+// ctx: where on the page the download was triggered ('header', 'contact', etc.)
 export function trackResumeView(ctx) {
   track('resume_view', { method: 'pdf', ...(ctx ? { ctx } : {}) });
-  writeAnalyticsEvent('rv', { ...(ctx ? { ctx } : {}) });
+  writeAnalyticsEvent(EV.RESUME_VIEW, ev.resumeView(ctx));
 }
 
 export function trackSectionView(sectionName) {
   track('section_view', { section_name: sectionName });
-  // Write to RTDB on entry — reliable mid-session write, not dependent on tab close.
-  // This is the primary signal for section reach counts.
-  writeAnalyticsEvent('sv', { sec: sectionName });
+  writeAnalyticsEvent(EV.SECTION_VIEW, ev.sectionView(sectionName));
 }
 
 // Called by useSectionView hook with accumulated dwell on section exit.
-// Uses separate event code 'sd' so section counts (sv) and dwell (sd) are independent.
-// Best-effort — may not complete if tab is killed before async chain finishes.
+// 'sd' is separate from 'sv' so section reach counts and dwell are independent.
 export function trackSectionDwell(sectionName, dwellMs) {
-  writeAnalyticsEvent('sd', { sec: sectionName, dwell: dwellMs });
+  writeAnalyticsEvent(EV.SECTION_DWELL, ev.sectionDwell(sectionName, dwellMs));
 }
 
 export function trackProjectExpand(projectId) {
   track('project_expand', { project_id: projectId });
-  writeAnalyticsEvent('pe', { pid: projectId });
-}
-
-export function trackThemeToggle(to) {
-  track('theme_toggle', { to });
-  writeAnalyticsEvent('tt', { to });
+  writeAnalyticsEvent(EV.PROJECT_EXPAND, ev.projectExpand(projectId));
 }
 

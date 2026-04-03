@@ -1,10 +1,3 @@
-export const meta = {
-  name: 'Ashin Sabu',
-  title: 'Software Engineer',
-  company: 'Harness.io',
-  email: 'ashin.sabu3@gmail.com',
-};
-
 const _dob = new Date(2002, 10, 10); // Nov 10 2002 (month is 0-indexed)
 const _today = new Date();
 const _age = _today.getFullYear() - _dob.getFullYear()
@@ -96,11 +89,6 @@ export const experience = [
       'Release management dashboard for engineering leadership',
     ],
   },
-];
-
-export const awards = [
-  { label: 'ICPC Regionalist', detail: '2022 Bangalore · 2023 Mathura' },
-  { label: 'LeetCode Knight', detail: '1850 rating · top 5%' },
 ];
 
 export const creative = {

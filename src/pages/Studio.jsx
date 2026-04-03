@@ -68,6 +68,24 @@ async function loadPrivateKeyFromSession(database) {
   }
 }
 
+function PasswordInput({ value, onChange, placeholder, showPassword, onToggle }) {
+  return (
+    <div className="studio-pw-wrap">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        className="studio-input studio-input--pw"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        autoFocus
+      />
+      <button type="button" className="studio-pw-toggle" onClick={onToggle} tabIndex={-1}>
+        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
+    </div>
+  );
+}
+
 // States: checking → needs-rules | init | login | locked → dashboard
 function Studio() {
   const [state, setState] = useState('checking');
@@ -363,19 +381,13 @@ function Studio() {
             The plain text password never leaves your browser.
           </p>
           <form onSubmit={handleSetPassword} className="studio-form">
-            <div className="studio-pw-wrap">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="studio-input studio-input--pw"
-                placeholder="Choose a password (min 8 chars)"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoFocus
-              />
-              <button type="button" className="studio-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Choose a password (min 8 chars)"
+              showPassword={showPassword}
+              onToggle={() => setShowPassword(s => !s)}
+            />
             {error && <p className="studio-error">{error}</p>}
             <button type="submit" className="studio-btn">Set Password</button>
           </form>
@@ -390,19 +402,13 @@ function Studio() {
         <div className="studio-box">
           <p className="studio-label">studio</p>
           <form onSubmit={handleLogin} className="studio-form">
-            <div className="studio-pw-wrap">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="studio-input studio-input--pw"
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoFocus
-              />
-              <button type="button" className="studio-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              showPassword={showPassword}
+              onToggle={() => setShowPassword(s => !s)}
+            />
             {error && <p className="studio-error">{error}</p>}
             <button type="submit" className="studio-btn">Enter</button>
           </form>
