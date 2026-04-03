@@ -9,6 +9,16 @@ import {
   loadSession,
   clearSession,
 } from '../utils/studioAuth';
+import {
+  deriveWrappingKey,
+  exportWrappingKeyJwk,
+  importWrappingKeyJwk,
+  generateAnalyticsKeyPair,
+  exportPublicKeyJwk,
+  wrapPrivateKey,
+  unwrapPrivateKey,
+} from '../utils/analyticsEncrypt';
+import AnalyticsPanel from '../components/studio/AnalyticsPanel';
 import '../styles/Studio.css';
 
 
@@ -20,9 +30,36 @@ const RTDB_RULES = `{
     "ov": {
       ".read": true,
       ".write": "newData.hasChild('_a') && newData.child('_a').val() === root.child('s/h').val()"
+    },
+    "an": {
+      ".read": true,
+      "_a": { ".write": true },
+      "s": {
+        "$uid": {
+          ".write": "!data.exists() || root.child('an/_a').val() === root.child('s/h').val()",
+          ".validate": "newData.hasChildren(['pub','ct','iv','v']) && newData.child('ct').isString() && newData.child('ct').val().length < 4096 && newData.child('v').isNumber()"
+        }
+      }
     }
   }
 }`;
+
+// Restores the analytics private key using the wrapping key cached in sessionStorage.
+// Called on session-resume (tab reload while session is still valid) so the user
+// doesn't need to re-enter their password.
+async function loadPrivateKeyFromSession(database) {
+  try {
+    const stored = sessionStorage.getItem('studio_wrap_key');
+    if (!stored) return null;
+    const wrappingKey = await importWrappingKeyJwk(JSON.parse(stored));
+    const { ref, get } = await import('firebase/database');
+    const snap = await get(ref(database, 'ov/pk'));
+    if (!snap.exists()) return null;
+    return await unwrapPrivateKey(snap.val(), wrappingKey);
+  } catch {
+    return null;
+  }
+}
 
 // States: checking → needs-rules | init | login | locked → dashboard
 function Studio() {
@@ -36,6 +73,8 @@ function Studio() {
   const [status, setStatus] = useState('');
   const [db, setDb] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  // privateKey lives in memory only — never persisted directly
+  const [privateKey, setPrivateKey] = useState(null);
 
   // loadOverrides is used both from the init effect and from handleLogin/handleSetPassword.
   // The `cancelled` guard only applies in the effect context — callers outside the effect
@@ -80,6 +119,9 @@ function Studio() {
           if (snap.exists() && snap.val() === sessionHash) {
             setSavedHash(sessionHash);
             await loadOverrides(database);
+            // Restore private key from sessionStorage-cached wrapping key
+            const pk = await loadPrivateKeyFromSession(database);
+            if (!cancelled && pk) setPrivateKey(pk);
             if (!cancelled) setState('dashboard');
             return;
           }
@@ -134,6 +176,28 @@ function Studio() {
       await set(ref(db, 's/h'), hash);
       setSavedHash(hash);
       saveSession(hash);
+
+      // Generate ECDH keypair for analytics encryption
+      // Public key → RTDB ov/pubkey (fetched by analytics writer at runtime)
+      // Private key → wrapped with PBKDF2-derived AES key → RTDB ov/pk
+      // Wrapping key → sessionStorage (cleared on tab close)
+      try {
+        const keyPair = await generateAnalyticsKeyPair();
+        const pubJwk = await exportPublicKeyJwk(keyPair.publicKey);
+        const wrappingKey = await deriveWrappingKey(password, true);
+        const wrapped = await wrapPrivateKey(keyPair.privateKey, wrappingKey);
+        await Promise.all([
+          set(ref(db, 'ov/pubkey'), pubJwk),
+          set(ref(db, 'ov/pk'), wrapped),
+        ]);
+        const wrappingKeyJwk = await exportWrappingKeyJwk(wrappingKey);
+        sessionStorage.setItem('studio_wrap_key', JSON.stringify(wrappingKeyJwk));
+        setPrivateKey(keyPair.privateKey);
+      } catch {
+        // Key generation failure is non-fatal — analytics just won't work yet
+        // User can regenerate keys from Studio settings in future
+      }
+
       setState('dashboard');
     } catch (err) {
       const msg = String(err?.message || err).toLowerCase();
@@ -154,6 +218,22 @@ function Studio() {
       clearAttempts();
       saveSession(hash);
       await loadOverrides(db);
+
+      // Derive wrapping key, cache it in sessionStorage, unwrap private key
+      try {
+        const wrappingKey = await deriveWrappingKey(password, true);
+        const { ref, get } = await import('firebase/database');
+        const pkSnap = await get(ref(db, 'ov/pk'));
+        if (pkSnap.exists()) {
+          const pk = await unwrapPrivateKey(pkSnap.val(), wrappingKey);
+          setPrivateKey(pk);
+          const wrappingKeyJwk = await exportWrappingKeyJwk(wrappingKey);
+          sessionStorage.setItem('studio_wrap_key', JSON.stringify(wrappingKeyJwk));
+        }
+      } catch {
+        // Wrong wrapping key or no key stored yet — analytics panel will show no data
+      }
+
       setState('dashboard');
     } else {
       const attempts = recordFailedAttempt();
@@ -196,9 +276,11 @@ function Studio() {
 
   function handleLogout() {
     clearSession();
+    sessionStorage.removeItem('studio_wrap_key');
     setPassword('');
     setOverrides({});
     setSavedHash(null);
+    setPrivateKey(null);
     setState('login');
   }
 
@@ -298,6 +380,8 @@ function Studio() {
           <p className="studio-label">studio</p>
           <button className="studio-logout-btn" onClick={handleLogout}>Sign out</button>
         </div>
+
+        {privateKey && <AnalyticsPanel db={db} privateKey={privateKey} />}
 
         <section className="studio-section">
           <label className="studio-section-title">About — paragraph 1</label>
