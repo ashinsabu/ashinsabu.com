@@ -58,14 +58,25 @@ export function trackLinkClick(linkType, destination) {
   writeAnalyticsEvent('lc', { lt: linkType, dst: destination });
 }
 
-export function trackResumeView() {
-  track('resume_view', { method: 'pdf' });
-  writeAnalyticsEvent('rv', {});
+// ctx: where on the page the download was triggered (e.g. 'header', 'contact')
+// Extensible — pass ctx wherever trackResumeView is called.
+export function trackResumeView(ctx) {
+  track('resume_view', { method: 'pdf', ...(ctx ? { ctx } : {}) });
+  writeAnalyticsEvent('rv', { ...(ctx ? { ctx } : {}) });
 }
 
 export function trackSectionView(sectionName) {
   track('section_view', { section_name: sectionName });
+  // Write to RTDB on entry — reliable mid-session write, not dependent on tab close.
+  // This is the primary signal for section reach counts.
   writeAnalyticsEvent('sv', { sec: sectionName });
+}
+
+// Called by useSectionView hook with accumulated dwell on section exit.
+// Uses separate event code 'sd' so section counts (sv) and dwell (sd) are independent.
+// Best-effort — may not complete if tab is killed before async chain finishes.
+export function trackSectionDwell(sectionName, dwellMs) {
+  writeAnalyticsEvent('sd', { sec: sectionName, dwell: dwellMs });
 }
 
 export function trackProjectExpand(projectId) {

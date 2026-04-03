@@ -67,7 +67,7 @@ function Contact({ resumeLabel }) {
           <a
             href="/resume.pdf"
             className="contact-resume-btn"
-            onClick={e => { e.preventDefault(); trackResumeView(); downloadResume(); }}
+            onClick={e => { e.preventDefault(); trackResumeView('contact'); downloadResume(); }}
           >
             <Download size={16} />
             Download Resume

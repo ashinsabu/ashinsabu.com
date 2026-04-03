@@ -307,6 +307,17 @@
   text-align: right;
 }
 
+.an-bar-row--dwell {
+  grid-template-columns: 9rem 1fr 2.5rem 3rem;
+}
+
+.an-bar-dwell {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  text-align: right;
+}
+
 /* Device/browser pills */
 .an-pills-row {
   display: grid;

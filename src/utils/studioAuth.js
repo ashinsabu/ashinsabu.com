@@ -2,10 +2,12 @@
 // Nothing from this file is imported by the main site.
 
 const SALT = 'ashinsabu_studio_v1';
+const DELETE_SALT = 'ashinsabu_delete_v1';
 const ITERATIONS = 100_000;
 const HASH_BITS = 256;
 
 const SESSION_KEY = 'studio_session';
+const DELETE_TOKEN_KEY = 'studio_delete_token';
 const LOCKOUT_KEY = 'studio_lockout';
 const ATTEMPTS_KEY = 'studio_attempts';
 const MAX_ATTEMPTS = 5;
@@ -82,4 +84,33 @@ export function loadSession() {
 
 export function clearSession() {
   sessionStorage.removeItem(SESSION_KEY);
+}
+
+// Delete token — derived from password with a separate salt so it can never be
+// used to authenticate against s/h or write to ov/. Stored non-readable at s/d.
+export async function deriveDeleteToken(password) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(DELETE_SALT), iterations: ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    HASH_BITS,
+  );
+  return Array.from(new Uint8Array(bits))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export function saveDeleteToken(token) {
+  sessionStorage.setItem(DELETE_TOKEN_KEY, token);
+}
+
+export function loadDeleteToken() {
+  return sessionStorage.getItem(DELETE_TOKEN_KEY);
+}
+
+export function clearDeleteToken() {
+  sessionStorage.removeItem(DELETE_TOKEN_KEY);
 }

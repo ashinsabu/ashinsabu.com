@@ -24,7 +24,7 @@ async function init() {
       import('firebase/database'),
     ]);
     _db = dbMod.getDatabase(fireMod.app);
-    const snap = await dbMod.get(dbMod.ref(_db, 'ov/pubkey'));
+    const snap = await dbMod.get(dbMod.ref(_db, 's/pubkey'));
     if (!snap.exists()) return false;
     _pubKey = await importPublicKeyJwk(snap.val());
     return true;

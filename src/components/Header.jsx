@@ -31,7 +31,7 @@ function Header() {
         <a
           href="/resume.pdf"
           className="header-resume-btn"
-          onClick={e => { e.preventDefault(); trackResumeView(); downloadResume(); }}
+          onClick={e => { e.preventDefault(); trackResumeView('header'); downloadResume(); }}
         >
           <Download size={13} />
           Resume

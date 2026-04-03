@@ -8,6 +8,9 @@ import {
   saveSession,
   loadSession,
   clearSession,
+  deriveDeleteToken,
+  saveDeleteToken,
+  clearDeleteToken,
 } from '../utils/studioAuth';
 import {
   deriveWrappingKey,
@@ -25,7 +28,10 @@ import '../styles/Studio.css';
 const RTDB_RULES = `{
   "rules": {
     "s": {
-      "h": { ".read": true, ".write": "!data.exists()" }
+      "h":      { ".read": true,  ".write": "!data.exists()" },
+      "d":      { ".read": false, ".write": "!data.exists()" },
+      "pubkey": { ".read": true,  ".write": "!data.exists()" },
+      "pk":     { ".read": true,  ".write": "!data.exists()" }
     },
     "ov": {
       ".read": true,
@@ -36,7 +42,7 @@ const RTDB_RULES = `{
       "_a": { ".write": true },
       "s": {
         "$uid": {
-          ".write": "!data.exists() || root.child('an/_a').val() === root.child('s/h').val()",
+          ".write": "!data.exists() || root.child('an/_a').val() === root.child('s/d').val()",
           ".validate": "newData.hasChildren(['pub','ct','iv','v']) && newData.child('ct').isString() && newData.child('ct').val().length < 4096 && newData.child('v').isNumber()"
         }
       }
@@ -53,7 +59,7 @@ async function loadPrivateKeyFromSession(database) {
     if (!stored) return null;
     const wrappingKey = await importWrappingKeyJwk(JSON.parse(stored));
     const { ref, get } = await import('firebase/database');
-    const snap = await get(ref(database, 'ov/pk'));
+    const snap = await get(ref(database, 's/pk'));
     if (!snap.exists()) return null;
     return await unwrapPrivateKey(snap.val(), wrappingKey);
   } catch {
@@ -177,25 +183,29 @@ function Studio() {
       setSavedHash(hash);
       saveSession(hash);
 
-      // Generate ECDH keypair for analytics encryption
-      // Public key → RTDB ov/pubkey (fetched by analytics writer at runtime)
-      // Private key → wrapped with PBKDF2-derived AES key → RTDB ov/pk
-      // Wrapping key → sessionStorage (cleared on tab close)
+      // Generate ECDH keypair + delete token — all write-once at s/
+      // s/pubkey — public key (readable, safe to expose)
+      // s/pk     — wrapped private key (readable, AES-wrapped with password-derived key)
+      // s/d      — delete token (NOT readable, separate PBKDF2 derivation from auth hash)
       try {
-        const keyPair = await generateAnalyticsKeyPair();
+        const [keyPair, deleteToken] = await Promise.all([
+          generateAnalyticsKeyPair(),
+          deriveDeleteToken(password),
+        ]);
         const pubJwk = await exportPublicKeyJwk(keyPair.publicKey);
         const wrappingKey = await deriveWrappingKey(password, true);
         const wrapped = await wrapPrivateKey(keyPair.privateKey, wrappingKey);
         await Promise.all([
-          set(ref(db, 'ov/pubkey'), pubJwk),
-          set(ref(db, 'ov/pk'), wrapped),
+          set(ref(db, 's/pubkey'), pubJwk),
+          set(ref(db, 's/pk'), wrapped),
+          set(ref(db, 's/d'), deleteToken),
         ]);
         const wrappingKeyJwk = await exportWrappingKeyJwk(wrappingKey);
         sessionStorage.setItem('studio_wrap_key', JSON.stringify(wrappingKeyJwk));
+        saveDeleteToken(deleteToken);
         setPrivateKey(keyPair.privateKey);
       } catch {
         // Key generation failure is non-fatal — analytics just won't work yet
-        // User can regenerate keys from Studio settings in future
       }
 
       setState('dashboard');
@@ -219,17 +229,28 @@ function Studio() {
       saveSession(hash);
       await loadOverrides(db);
 
-      // Derive wrapping key, cache it in sessionStorage, unwrap private key
+      // Derive wrapping key + delete token, cache both in sessionStorage, unwrap private key.
+      // Also writes s/d if missing — migration for anyone who ran the old code before
+      // s/d existed (s/d was previously not derived or stored).
       try {
-        const wrappingKey = await deriveWrappingKey(password, true);
-        const { ref, get } = await import('firebase/database');
-        const pkSnap = await get(ref(db, 'ov/pk'));
+        const [wrappingKey, deleteToken] = await Promise.all([
+          deriveWrappingKey(password, true),
+          deriveDeleteToken(password),
+        ]);
+        const { ref, get, set } = await import('firebase/database');
+        const [pkSnap, dtSnap] = await Promise.all([
+          get(ref(db, 's/pk')),
+          get(ref(db, 's/d')),
+        ]);
         if (pkSnap.exists()) {
           const pk = await unwrapPrivateKey(pkSnap.val(), wrappingKey);
           setPrivateKey(pk);
           const wrappingKeyJwk = await exportWrappingKeyJwk(wrappingKey);
           sessionStorage.setItem('studio_wrap_key', JSON.stringify(wrappingKeyJwk));
         }
+        // Migration: store s/d if it wasn't set during first-run
+        if (!dtSnap.exists()) await set(ref(db, 's/d'), deleteToken);
+        saveDeleteToken(deleteToken);
       } catch {
         // Wrong wrapping key or no key stored yet — analytics panel will show no data
       }
@@ -276,6 +297,7 @@ function Studio() {
 
   function handleLogout() {
     clearSession();
+    clearDeleteToken();
     sessionStorage.removeItem('studio_wrap_key');
     setPassword('');
     setOverrides({});

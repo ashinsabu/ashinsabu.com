@@ -58,11 +58,26 @@ function aggregate(payloads) {
     if (s.dur   != null) { totalDur += s.dur; durCount++; }
   }
 
-  // Section views and project opens are per-event (not per-session)
+  // sv = section entry (reliable, counts)
+  // sd = section dwell on exit (best-effort, dwell time only)
   const sectionCounts = {};
+  const sectionDwellTotal = {};  // sec → total ms
+  const sectionDwellCount = {};  // sec → number of sd events
+  const resumeCtx = {};
   for (const p of payloads) {
     if (p.e === 'sv' && p.sec) increment(sectionCounts, p.sec);
+    if (p.e === 'sd' && p.sec && typeof p.dwell === 'number') {
+      sectionDwellTotal[p.sec] = (sectionDwellTotal[p.sec] || 0) + p.dwell;
+      sectionDwellCount[p.sec] = (sectionDwellCount[p.sec] || 0) + 1;
+    }
     if (p.e === 'pe' && p.pid) increment(projects, p.pid);
+    if (p.e === 'rv') increment(resumeCtx, p.ctx || 'unknown');
+  }
+
+  // Average dwell per section in seconds (null if no dwell data)
+  const sectionAvgDwell = {};
+  for (const sec of Object.keys(sectionDwellTotal)) {
+    sectionAvgDwell[sec] = Math.round(sectionDwellTotal[sec] / sectionDwellCount[sec] / 1000);
   }
 
   const avgScroll = scrollCount ? Math.round(totalScroll / scrollCount) : null;
@@ -70,13 +85,15 @@ function aggregate(payloads) {
 
   return {
     total, avgScroll, avgDur,
-    referrers: topN(referrers, 7),
-    devices:   topN(devices),
-    browsers:  topN(browsers),
-    timezones: topN(timezones, 5),
+    referrers:     topN(referrers, 7),
+    devices:       topN(devices),
+    browsers:      topN(browsers),
+    timezones:     topN(timezones, 5),
     sectionCounts,
-    projects:  topN(projects, 5),
-    recent:    sessionList.slice(0, 10),
+    sectionAvgDwell,
+    projects:      topN(projects, 5),
+    resumeCtx:     topN(resumeCtx),
+    recent:        sessionList.slice(0, 10),
   };
 }
 
@@ -122,8 +139,6 @@ export default function AnalyticsPanel({ db, privateKey }) {
 
       const raw = snap.val(); // { uuid: blob, ... }
       const entries = Object.entries(raw);
-      const now = Date.now();
-      const GRACE_MS = 2 * 60 * 1000; // 2-minute grace period for in-flight writes
 
       // Decrypt all in parallel — errors are caught inside decryptPayload, never throw here
       const results = await Promise.all(
@@ -132,10 +147,11 @@ export default function AnalyticsPanel({ db, privateKey }) {
         )
       );
 
-      const good    = results.filter(r => r.ok);
-      const cryptoFail = results.filter(
-        r => !r.ok && r.reason === 'crypto' && (!raw[r.id]?.ts || now - (raw[r.id]?.ts ?? 0) > GRACE_MS)
-      );
+      const good       = results.filter(r => r.ok);
+      // AES-GCM tag failure = definitively NOT encrypted with our key = safe to delete.
+      // No grace period: ts lives inside the encrypted payload so we can't check it
+      // without decrypting — and if decryption fails, we already know it's garbage.
+      const cryptoFail = results.filter(r => !r.ok && r.reason === 'crypto');
       const schemaFail = results.filter(r => !r.ok && r.reason === 'schema');
 
       setStats(aggregate(good.map(r => r.payload)));
@@ -156,22 +172,27 @@ export default function AnalyticsPanel({ db, privateKey }) {
 
   async function deleteGarbage() {
     if (garbage.length === 0) return;
+    const deleteToken = sessionStorage.getItem('studio_delete_token');
+    if (!deleteToken) return;
     setCleanupState('deleting');
     try {
-      const { ref, set, remove } = await import('firebase/database');
+      const { ref, set, update: rtdbUpdate, remove } = await import('firebase/database');
 
-      // Write auth token so RTDB rules allow deletes
-      const sessionRaw = sessionStorage.getItem('studio_session');
-      const hash = sessionRaw ? JSON.parse(sessionRaw).hash : null;
-      if (hash) await set(ref(db, 'an/_a'), hash);
+      // Step 1: write auth token first — must complete before RTDB evaluates delete rules.
+      // (Firebase rule evaluation uses pre-update state for root references, so auth token
+      // and deletes cannot be combined into one operation.)
+      await set(ref(db, 'an/_a'), deleteToken);
 
-      // Delete in parallel — individual failures are non-fatal
-      await Promise.allSettled(
-        garbage.map(id => remove(ref(db, `an/s/${id}`)))
-      );
+      // Step 2: batch delete all garbage in one round trip
+      const deletePayload = {};
+      for (const id of garbage) {
+        deletePayload[`an/s/${id}`] = null;
+      }
+      await rtdbUpdate(ref(db, '/'), deletePayload);
 
-      // Clear auth token
-      if (hash) await remove(ref(db, 'an/_a'));
+      // Step 3: clear auth token — window is steps 1-3 duration (~2 round trips).
+      // Even if read during window, value only authorises an/s/ deletes — not ov/ writes.
+      await remove(ref(db, 'an/_a'));
 
       setGarbage([]);
       setCleanupState('done');
@@ -251,7 +272,30 @@ export default function AnalyticsPanel({ db, privateKey }) {
       {sectionRows.length > 0 && (
         <div className="an-section">
           <p className="an-section-label">Section reach</p>
-          <BarChart rows={sectionRows} />
+          <div className="an-chart">
+            {sectionRows.map(([sec, count]) => {
+              const max = Math.max(...sectionRows.map(r => r[1]), 1);
+              const avgDwell = s.sectionAvgDwell[sec];
+              return (
+                <div key={sec} className="an-bar-row an-bar-row--dwell">
+                  <span className="an-bar-label">{sec}</span>
+                  <div className="an-bar-track">
+                    <div className="an-bar-fill" style={{ width: `${Math.round((count / max) * 100)}%` }} />
+                  </div>
+                  <span className="an-bar-count">{count}</span>
+                  <span className="an-bar-dwell">{avgDwell != null ? `${avgDwell}s` : '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Resume click sources */}
+      {s.resumeCtx.length > 0 && (
+        <div className="an-section">
+          <p className="an-section-label">Resume — where they clicked</p>
+          <BarChart rows={s.resumeCtx} />
         </div>
       )}
 
@@ -315,13 +359,17 @@ export default function AnalyticsPanel({ db, privateKey }) {
           <span className="studio-hint">
             {garbage.length} blob{garbage.length !== 1 ? 's' : ''} failed decryption (fake writes).
           </span>
-          <button
-            className="studio-logout-btn"
-            onClick={deleteGarbage}
-            disabled={cleanupState === 'deleting'}
-          >
-            {cleanupState === 'deleting' ? 'Deleting...' : cleanupState === 'done' ? 'Deleted.' : 'Delete garbage'}
-          </button>
+          {sessionStorage.getItem('studio_delete_token') ? (
+            <button
+              className="studio-logout-btn"
+              onClick={deleteGarbage}
+              disabled={cleanupState === 'deleting'}
+            >
+              {cleanupState === 'deleting' ? 'Deleting...' : cleanupState === 'done' ? 'Deleted.' : 'Delete garbage'}
+            </button>
+          ) : (
+            <span className="studio-hint">Re-login to enable cleanup.</span>
+          )}
         </div>
       )}
 
