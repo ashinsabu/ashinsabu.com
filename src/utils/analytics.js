@@ -53,9 +53,12 @@ if (typeof window !== 'undefined') {
 
 // ── Tracked events ───────────────────────────────────────────────────────────
 
-export function trackLinkClick(linkType, destination) {
+// To add a new tracked event: add a trackXxx export here that calls writeAnalyticsEvent
+// with a short event code (e.g. 'ab') and a flat data object. Then add the aggregation
+// in AnalyticsPanel's aggregate() and a display block in its render output.
+export function trackLinkClick(linkType, destination, ctx) {
   track('link_click', { link_type: linkType, destination });
-  writeAnalyticsEvent('lc', { lt: linkType, dst: destination });
+  writeAnalyticsEvent('lc', { lt: linkType, dst: destination, ...(ctx ? { ctx } : {}) });
 }
 
 // ctx: where on the page the download was triggered (e.g. 'header', 'contact')

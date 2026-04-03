@@ -13,7 +13,7 @@ function Footer() {
           target="_blank"
           rel="noopener noreferrer"
           className="footer-source"
-          onClick={() => trackLinkClick('source_code', links.sourceCode)}
+          onClick={() => trackLinkClick('source_code', links.sourceCode, 'footer')}
         >
           <Github size={12} />
           Source

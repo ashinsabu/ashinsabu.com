@@ -22,6 +22,7 @@ import {
   unwrapPrivateKey,
 } from '../utils/analyticsEncrypt';
 import AnalyticsPanel from '../components/studio/AnalyticsPanel';
+import { Eye, EyeOff } from 'lucide-react';
 import '../styles/Studio.css';
 
 
@@ -79,6 +80,7 @@ function Studio() {
   const [status, setStatus] = useState('');
   const [db, setDb] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   // privateKey lives in memory only — never persisted directly
   const [privateKey, setPrivateKey] = useState(null);
 
@@ -229,30 +231,25 @@ function Studio() {
       saveSession(hash);
       await loadOverrides(db);
 
-      // Derive wrapping key + delete token, cache both in sessionStorage, unwrap private key.
-      // Also writes s/d if missing — migration for anyone who ran the old code before
-      // s/d existed (s/d was previously not derived or stored).
+      // Derive wrapping key + delete token, cache in sessionStorage, unwrap private key.
+      // Note: do NOT read s/d — it has .read: false in RTDB rules, which would throw
+      // PERMISSION_DENIED and prevent the private key from loading.
       try {
         const [wrappingKey, deleteToken] = await Promise.all([
           deriveWrappingKey(password, true),
           deriveDeleteToken(password),
         ]);
-        const { ref, get, set } = await import('firebase/database');
-        const [pkSnap, dtSnap] = await Promise.all([
-          get(ref(db, 's/pk')),
-          get(ref(db, 's/d')),
-        ]);
+        const { ref, get } = await import('firebase/database');
+        const pkSnap = await get(ref(db, 's/pk'));
         if (pkSnap.exists()) {
           const pk = await unwrapPrivateKey(pkSnap.val(), wrappingKey);
           setPrivateKey(pk);
           const wrappingKeyJwk = await exportWrappingKeyJwk(wrappingKey);
           sessionStorage.setItem('studio_wrap_key', JSON.stringify(wrappingKeyJwk));
         }
-        // Migration: store s/d if it wasn't set during first-run
-        if (!dtSnap.exists()) await set(ref(db, 's/d'), deleteToken);
         saveDeleteToken(deleteToken);
-      } catch {
-        // Wrong wrapping key or no key stored yet — analytics panel will show no data
+      } catch (err) {
+        console.error('[studio] key unwrap failed:', err);
       }
 
       setState('dashboard');
@@ -301,7 +298,8 @@ function Studio() {
     sessionStorage.removeItem('studio_wrap_key');
     setPassword('');
     setOverrides({});
-    setSavedHash(null);
+    // Don't clear savedHash — it's the RTDB value and stays valid after logout.
+    // Clearing it would cause handleLogin to always fail until a new tab re-fetches s/h.
     setPrivateKey(null);
     setState('login');
   }
@@ -356,14 +354,19 @@ function Studio() {
             The plain text password never leaves your browser.
           </p>
           <form onSubmit={handleSetPassword} className="studio-form">
-            <input
-              type="password"
-              className="studio-input"
-              placeholder="Choose a password (min 8 chars)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoFocus
-            />
+            <div className="studio-pw-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="studio-input studio-input--pw"
+                placeholder="Choose a password (min 8 chars)"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoFocus
+              />
+              <button type="button" className="studio-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
             {error && <p className="studio-error">{error}</p>}
             <button type="submit" className="studio-btn">Set Password</button>
           </form>
@@ -378,14 +381,19 @@ function Studio() {
         <div className="studio-box">
           <p className="studio-label">studio</p>
           <form onSubmit={handleLogin} className="studio-form">
-            <input
-              type="password"
-              className="studio-input"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoFocus
-            />
+            <div className="studio-pw-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="studio-input studio-input--pw"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoFocus
+              />
+              <button type="button" className="studio-pw-toggle" onClick={() => setShowPassword(s => !s)} tabIndex={-1}>
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
             {error && <p className="studio-error">{error}</p>}
             <button type="submit" className="studio-btn">Enter</button>
           </form>

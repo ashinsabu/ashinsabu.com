@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { decryptPayload } from '../../utils/analyticsEncrypt.js';
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
@@ -25,8 +25,49 @@ function fmtTs(ms) {
     ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-// SECTION_ORDER defines the funnel display order
 const SECTION_ORDER = ['hero', 'work', 'opensource', 'thinking', 'creative', 'contact'];
+
+// ── Filter helpers ────────────────────────────────────────────────────────────
+
+function matchSource(ref, bucket) {
+  if (!ref || ref === 'direct') return bucket === 'direct';
+  if (ref === 'google' || ref === 'bing') return bucket === 'search';
+  if (ref === 'instagram' || ref === 'twitter' || ref === 'linkedin') return bucket === 'social';
+  return bucket === 'other';
+}
+
+// Returns a subset of payloads whose sessions pass the filter.
+// Two-pass: build per-session index (minTs + context), filter sessions, return matching payloads.
+function applyFilters(payloads, filter) {
+  if (filter.range === 'all' && filter.device === 'all' && filter.source === 'all') return payloads;
+
+  const cutoff = filter.range !== 'all'
+    ? Date.now() - { '7d': 7, '30d': 30, '90d': 90 }[filter.range] * 86400000
+    : 0;
+
+  const sInfo = {}; // sid → { minTs, dev, ref }
+  for (const p of payloads) {
+    if (!sInfo[p.sid]) sInfo[p.sid] = { minTs: p.ts };
+    else if (p.ts < sInfo[p.sid].minTs) sInfo[p.sid].minTs = p.ts;
+    if (p.dev) sInfo[p.sid].dev = p.dev;
+    if (p.ref) sInfo[p.sid].ref = p.ref;
+  }
+
+  const goodSids = new Set(
+    Object.entries(sInfo)
+      .filter(([, s]) => {
+        if (cutoff && s.minTs < cutoff) return false;
+        if (filter.device !== 'all' && s.dev !== filter.device) return false;
+        if (filter.source !== 'all' && !matchSource(s.ref, filter.source)) return false;
+        return true;
+      })
+      .map(([sid]) => sid)
+  );
+
+  return payloads.filter(p => goodSids.has(p.sid));
+}
+
+// ── Aggregate ─────────────────────────────────────────────────────────────────
 
 function aggregate(payloads) {
   const sessions = {}; // sid → { context, events, scroll, dur }
@@ -35,9 +76,8 @@ function aggregate(payloads) {
     if (!sessions[p.sid]) sessions[p.sid] = { events: [], ts: p.ts };
     const s = sessions[p.sid];
 
-    // Session context fields only appear on the first event
     if (p.dev) { s.dev = p.dev; s.br = p.br; s.os = p.os; s.ref = p.ref; s.tz = p.tz; s.lang = p.lang; s.entry = p.entry; s.utm = p.utm; }
-    if (p.ts < s.ts) s.ts = p.ts; // earliest timestamp = session start
+    if (p.ts < s.ts) s.ts = p.ts;
 
     s.events.push(p.e);
     if (p.e === 'ex') { s.scroll = p.scroll; s.dur = p.dur; }
@@ -58,12 +98,13 @@ function aggregate(payloads) {
     if (s.dur   != null) { totalDur += s.dur; durCount++; }
   }
 
-  // sv = section entry (reliable, counts)
-  // sd = section dwell on exit (best-effort, dwell time only)
   const sectionCounts = {};
-  const sectionDwellTotal = {};  // sec → total ms
-  const sectionDwellCount = {};  // sec → number of sd events
+  const sectionDwellTotal = {};
+  const sectionDwellCount = {};
   const resumeCtx = {};
+  const linkTypes = {}; // lc: by link type (lt)
+  const linkCtx = {};   // lc: by originating section (ctx)
+
   for (const p of payloads) {
     if (p.e === 'sv' && p.sec) increment(sectionCounts, p.sec);
     if (p.e === 'sd' && p.sec && typeof p.dwell === 'number') {
@@ -72,19 +113,21 @@ function aggregate(payloads) {
     }
     if (p.e === 'pe' && p.pid) increment(projects, p.pid);
     if (p.e === 'rv') increment(resumeCtx, p.ctx || 'unknown');
+    if (p.e === 'lc') {
+      if (p.lt)  increment(linkTypes, p.lt);
+      if (p.ctx) increment(linkCtx, p.ctx);
+    }
   }
 
-  // Average dwell per section in seconds (null if no dwell data)
   const sectionAvgDwell = {};
   for (const sec of Object.keys(sectionDwellTotal)) {
     sectionAvgDwell[sec] = Math.round(sectionDwellTotal[sec] / sectionDwellCount[sec] / 1000);
   }
 
-  const avgScroll = scrollCount ? Math.round(totalScroll / scrollCount) : null;
-  const avgDur    = durCount    ? Math.round(totalDur / durCount)        : null;
-
   return {
-    total, avgScroll, avgDur,
+    total,
+    avgScroll: scrollCount ? Math.round(totalScroll / scrollCount) : null,
+    avgDur:    durCount    ? Math.round(totalDur / durCount)        : null,
     referrers:     topN(referrers, 7),
     devices:       topN(devices),
     browsers:      topN(browsers),
@@ -93,6 +136,8 @@ function aggregate(payloads) {
     sectionAvgDwell,
     projects:      topN(projects, 5),
     resumeCtx:     topN(resumeCtx),
+    linkTypes:     topN(linkTypes, 8),
+    linkCtx:       topN(linkCtx),
     recent:        sessionList.slice(0, 10),
   };
 }
@@ -118,12 +163,21 @@ function BarChart({ rows, maxVal }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const INIT_FILTER = { range: 'all', device: 'all', source: 'all' };
+
 export default function AnalyticsPanel({ db, privateKey }) {
   const [loadState, setLoadState] = useState('idle'); // idle | loading | loaded | error
-  const [stats, setStats]         = useState(null);
-  const [garbage, setGarbage]     = useState([]); // [{ id, ts }]
+  const [allPayloads, setAllPayloads] = useState([]);
+  const [garbage, setGarbage]         = useState([]);
   const [schemaUnknown, setSchemaUnknown] = useState(0);
-  const [cleanupState, setCleanupState]   = useState('idle'); // idle | deleting | done
+  const [cleanupState, setCleanupState]   = useState('idle');
+  const [filter, setFilter]               = useState(INIT_FILTER);
+
+  // Recomputed in-memory whenever payloads or filter changes — no re-fetch needed
+  const stats = useMemo(
+    () => loadState === 'loaded' ? aggregate(applyFilters(allPayloads, filter)) : null,
+    [allPayloads, filter, loadState]
+  );
 
   const loadAnalytics = useCallback(async () => {
     setLoadState('loading');
@@ -132,15 +186,14 @@ export default function AnalyticsPanel({ db, privateKey }) {
       const snap = await get(ref(db, 'an/s'));
 
       if (!snap.exists()) {
-        setStats(aggregate([]));
+        setAllPayloads([]);
         setLoadState('loaded');
         return;
       }
 
-      const raw = snap.val(); // { uuid: blob, ... }
+      const raw = snap.val();
       const entries = Object.entries(raw);
 
-      // Decrypt all in parallel — errors are caught inside decryptPayload, never throw here
       const results = await Promise.all(
         entries.map(([id, blob]) =>
           decryptPayload(blob, privateKey).then(r => ({ id, blob, ...r }))
@@ -148,17 +201,12 @@ export default function AnalyticsPanel({ db, privateKey }) {
       );
 
       const good       = results.filter(r => r.ok);
-      // AES-GCM tag failure = definitively NOT encrypted with our key = safe to delete.
-      // No grace period: ts lives inside the encrypted payload so we can't check it
-      // without decrypting — and if decryption fails, we already know it's garbage.
       const cryptoFail = results.filter(r => !r.ok && r.reason === 'crypto');
       const schemaFail = results.filter(r => !r.ok && r.reason === 'schema');
 
-      setStats(aggregate(good.map(r => r.payload)));
+      setAllPayloads(good.map(r => r.payload));
       setSchemaUnknown(schemaFail.length);
 
-      // Only surface garbage for deletion if at least one blob decrypted successfully.
-      // If zero succeeded, the private key may be wrong — warn rather than delete.
       if (good.length > 0 && cryptoFail.length > 0) {
         setGarbage(cryptoFail.map(r => r.id));
       }
@@ -177,23 +225,11 @@ export default function AnalyticsPanel({ db, privateKey }) {
     setCleanupState('deleting');
     try {
       const { ref, set, update: rtdbUpdate, remove } = await import('firebase/database');
-
-      // Step 1: write auth token first — must complete before RTDB evaluates delete rules.
-      // (Firebase rule evaluation uses pre-update state for root references, so auth token
-      // and deletes cannot be combined into one operation.)
       await set(ref(db, 'an/_a'), deleteToken);
-
-      // Step 2: batch delete all garbage in one round trip
       const deletePayload = {};
-      for (const id of garbage) {
-        deletePayload[`an/s/${id}`] = null;
-      }
+      for (const id of garbage) deletePayload[`an/s/${id}`] = null;
       await rtdbUpdate(ref(db, '/'), deletePayload);
-
-      // Step 3: clear auth token — window is steps 1-3 duration (~2 round trips).
-      // Even if read during window, value only authorises an/s/ deletes — not ov/ writes.
       await remove(ref(db, 'an/_a'));
-
       setGarbage([]);
       setCleanupState('done');
       setTimeout(() => setCleanupState('idle'), 3000);
@@ -201,6 +237,8 @@ export default function AnalyticsPanel({ db, privateKey }) {
       setCleanupState('idle');
     }
   }
+
+  function setRange(r) { setFilter(f => ({ ...f, range: r })); }
 
   // ── Render: idle ──────────────────────────────────────────────────────────
   if (loadState === 'idle') {
@@ -242,6 +280,42 @@ export default function AnalyticsPanel({ db, privateKey }) {
       <div className="studio-section-title an-title-row">
         <span>Analytics</span>
         <button className="studio-logout-btn" onClick={loadAnalytics}>Refresh</button>
+      </div>
+
+      {/* Filters */}
+      <div className="an-filters">
+        <div className="an-filter-group">
+          {['7d', '30d', '90d', 'all'].map(r => (
+            <button
+              key={r}
+              className={`an-filter-pill${filter.range === r ? ' an-filter-pill--active' : ''}`}
+              onClick={() => setRange(r)}
+            >
+              {r === 'all' ? 'All' : r}
+            </button>
+          ))}
+        </div>
+        <select
+          className="an-filter-select"
+          value={filter.device}
+          onChange={e => setFilter(f => ({ ...f, device: e.target.value }))}
+        >
+          <option value="all">All devices</option>
+          <option value="desktop">Desktop</option>
+          <option value="mobile">Mobile</option>
+          <option value="tablet">Tablet</option>
+        </select>
+        <select
+          className="an-filter-select"
+          value={filter.source}
+          onChange={e => setFilter(f => ({ ...f, source: e.target.value }))}
+        >
+          <option value="all">All sources</option>
+          <option value="direct">Direct</option>
+          <option value="search">Search</option>
+          <option value="social">Social</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
       {/* Summary strip */}
@@ -307,6 +381,21 @@ export default function AnalyticsPanel({ db, privateKey }) {
         </div>
       )}
 
+      {/* Link clicks */}
+      {s.linkTypes.length > 0 && (
+        <div className="an-section">
+          <p className="an-section-label">Link clicks</p>
+          <BarChart rows={s.linkTypes} />
+          {s.linkCtx.length > 0 && (
+            <div className="an-link-ctx">
+              {s.linkCtx.map(([ctx, count]) => (
+                <span key={ctx} className="an-pill">{ctx} <strong>{count}</strong></span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Device + browser */}
       <div className="an-section an-pills-row">
         <div>
@@ -353,7 +442,7 @@ export default function AnalyticsPanel({ db, privateKey }) {
         </div>
       )}
 
-      {/* Cleanup notice — only shown when garbage exists and key seems valid */}
+      {/* Cleanup notice */}
       {garbage.length > 0 && (
         <div className="an-cleanup">
           <span className="studio-hint">
@@ -373,7 +462,6 @@ export default function AnalyticsPanel({ db, privateKey }) {
         </div>
       )}
 
-      {/* Schema mismatch warning — never offer to delete these */}
       {schemaUnknown > 0 && (
         <p className="studio-hint" style={{ marginTop: '0.25rem' }}>
           {schemaUnknown} blob{schemaUnknown !== 1 ? 's' : ''} decrypted but had unexpected schema (kept, not deleted).

@@ -49,7 +49,7 @@ function ProjectCard({ project }) {
           target="_blank"
           rel="noopener noreferrer"
           className="project-link"
-          onClick={() => trackLinkClick('project', project.link)}
+          onClick={() => trackLinkClick('project', project.link, 'work')}
         >
           View live ↗
         </a>

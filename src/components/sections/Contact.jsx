@@ -17,7 +17,7 @@ function Contact({ resumeLabel }) {
         <div className="contact-email">
           <a
             href={`mailto:${contact.email}`}
-            onClick={() => trackLinkClick('email', contact.email)}
+            onClick={() => trackLinkClick('email', contact.email, 'contact')}
           >
             {contact.email}
           </a>
@@ -29,7 +29,7 @@ function Contact({ resumeLabel }) {
             target="_blank"
             rel="noopener noreferrer"
             className="contact-link"
-            onClick={() => trackLinkClick('github', contact.github)}
+            onClick={() => trackLinkClick('github', contact.github, 'contact')}
           >
             <Github size={14} /> GitHub
           </a>
@@ -38,7 +38,7 @@ function Contact({ resumeLabel }) {
             target="_blank"
             rel="noopener noreferrer"
             className="contact-link"
-            onClick={() => trackLinkClick('linkedin', contact.linkedin)}
+            onClick={() => trackLinkClick('linkedin', contact.linkedin, 'contact')}
           >
             <Linkedin size={14} /> LinkedIn
           </a>
@@ -47,7 +47,7 @@ function Contact({ resumeLabel }) {
             target="_blank"
             rel="noopener noreferrer"
             className="contact-link"
-            onClick={() => trackLinkClick('medium', contact.medium)}
+            onClick={() => trackLinkClick('medium', contact.medium, 'contact')}
           >
             Medium
           </a>
@@ -56,7 +56,7 @@ function Contact({ resumeLabel }) {
             target="_blank"
             rel="noopener noreferrer"
             className="contact-link"
-            onClick={() => trackLinkClick('codeforces', contact.codeforces)}
+            onClick={() => trackLinkClick('codeforces', contact.codeforces, 'contact')}
           >
             Codeforces
           </a>

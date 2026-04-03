@@ -24,7 +24,7 @@ function Creative({ creativeBio }) {
           target="_blank"
           rel="noopener noreferrer"
           className="creative-link"
-          onClick={() => trackLinkClick('instagram', creative.instagramUrl)}
+          onClick={() => trackLinkClick('instagram', creative.instagramUrl, 'creative')}
         >
           <Instagram size={14} />
           {creative.instagramHandle} ↗

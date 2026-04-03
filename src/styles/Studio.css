@@ -54,6 +54,33 @@
   border-color: var(--ink-muted);
 }
 
+.studio-pw-wrap {
+  position: relative;
+}
+
+.studio-input--pw {
+  padding-right: 2.5rem;
+}
+
+.studio-pw-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-muted);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.studio-pw-toggle:hover {
+  color: var(--ink);
+}
+
 .studio-btn {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -380,6 +407,60 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Filters */
+.an-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.an-filter-group {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.an-filter-pill {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  background: none;
+  border: 1px solid var(--rule);
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.an-filter-pill:hover {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+
+.an-filter-pill--active {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.an-filter-select {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  background-color: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Link ctx pills (below link clicks chart) */
+.an-link-ctx {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
 }
 
 /* Cleanup notice */
