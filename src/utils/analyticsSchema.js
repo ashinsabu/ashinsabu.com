@@ -8,7 +8,8 @@
 //
 // Overrides  (path: ov/)
 //   ov/_a          string   password hash (write auth guard)
-//   ov/data        object   { hero_role, hero_bio, about_p1, about_p2, creative_bio, resume_label }
+//   ov/data        object   { hero_role, hero_bio, about_p1, about_p2, music_bio, cover_1, cover_2, cover_3, resume_label }
+//                           (legacy key creative_bio is still read for backward compat)
 //   ov/resume_b64  string   base64-encoded PDF (fetched on demand, never on page load)
 //
 // Analytics  (path: an/)

@@ -32,7 +32,7 @@ function fmtTs(ms) {
     ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-const SECTION_ORDER = ['hero', 'work', 'opensource', 'thinking', 'creative', 'contact'];
+const SECTION_ORDER = ['hero', 'work', 'opensource', 'thinking', 'music', 'contact'];
 
 // Display-layer mapping for referrer strings — covers both current named values and
 // legacy `o:hostname` blobs written before the writer knew about these domains.
@@ -132,16 +132,22 @@ function aggregate(payloads) {
   const linkCtx = {};   // lc: by originating section (ctx)
 
   for (const p of payloads) {
-    if (p.e === EV.SECTION_VIEW && p.sec) increment(sectionCounts, p.sec);
+    if (p.e === EV.SECTION_VIEW && p.sec) {
+      // Normalize legacy 'creative' blobs into 'music' bucket
+      const secKey = p.sec === 'creative' ? 'music' : p.sec;
+      increment(sectionCounts, secKey);
+    }
     if (p.e === EV.SECTION_DWELL && p.sec && typeof p.dwell === 'number') {
-      sectionDwellTotal[p.sec] = (sectionDwellTotal[p.sec] || 0) + p.dwell;
-      sectionDwellCount[p.sec] = (sectionDwellCount[p.sec] || 0) + 1;
+      const secKey = p.sec === 'creative' ? 'music' : p.sec;
+      sectionDwellTotal[secKey] = (sectionDwellTotal[secKey] || 0) + p.dwell;
+      sectionDwellCount[secKey] = (sectionDwellCount[secKey] || 0) + 1;
     }
     if (p.e === EV.PROJECT_EXPAND && p.pid) increment(projects, p.pid);
     if (p.e === EV.RESUME_VIEW) increment(resumeCtx, p.ctx || 'unknown');
     if (p.e === EV.LINK_CLICK) {
       if (p.lt)  increment(linkTypes, p.lt);
-      if (p.ctx) increment(linkCtx, p.ctx);
+      // Normalize legacy 'creative' ctx into 'music'
+      if (p.ctx) increment(linkCtx, p.ctx === 'creative' ? 'music' : p.ctx);
     }
   }
 
@@ -207,7 +213,12 @@ function buildDensity(sessions, range) {
   } else {
     const earliest = Math.min(...sessions.map(s => s.ts));
     const spanMs = now - earliest;
-    bucketMs = spanMs > 365 * 86400_000 ? 30 * 86400_000 : 7 * 86400_000;
+    // Pick bucket size so we get a useful number of bars regardless of data age
+    bucketMs =
+      spanMs > 365 * 86400_000 ? 30 * 86400_000 :  // > 1 year   → monthly
+      spanMs > 14  * 86400_000 ?  7 * 86400_000 :  // > 2 weeks  → weekly
+      spanMs >  2  * 86400_000 ?     86400_000  :  // > 2 days   → daily
+                                  6 * 3600_000;     // ≤ 2 days   → 6-hour
     start = earliest;
   }
 
@@ -219,10 +230,12 @@ function buildDensity(sessions, range) {
     if (idx >= 0 && idx < numBuckets) counts[idx]++;
   }
 
+  // Use hour-level labels when bucket is sub-day
+  const useHourLabel = bucketMs < 86400_000;
   return counts.map((count, i) => {
     const t = start + i * bucketMs;
     const d = new Date(t);
-    const label = range === '7d'
+    const label = useHourLabel
       ? d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', hour12: false })
       : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     return { label, count };

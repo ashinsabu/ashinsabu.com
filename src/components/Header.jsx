@@ -25,7 +25,7 @@ function Header() {
         <nav className="header-nav">
           <a href="#work" className="header-nav-link">Work</a>
           <a href="#built" className="header-nav-link">Built</a>
-          <a href="#creative" className="header-nav-link">Creative</a>
+          <a href="#music" className="header-nav-link">Music</a>
           <a href="#contact" className="header-nav-link">Contact</a>
         </nav>
         <a

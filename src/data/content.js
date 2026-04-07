@@ -5,8 +5,8 @@ const _age = _today.getFullYear() - _dob.getFullYear()
 
 export const about = {
   paragraphs: [
-    `I'm a software engineer, ${_age}, based in Bengaluru. I build distributed systems and I'm a little obsessed with understanding software at the level where abstractions give out. Go and Java in production, Rust and C++ always pulling at the edges. What actually happens in a gRPC call crossing a cluster boundary. Why a Redis Stream backpressure curve looks the way it does under load. That curiosity shapes how I work: ship the simple thing first, profile before optimizing, reach for abstraction only when not having one is genuinely expensive.`,
-    "Outside of engineering, I make music and visual art. Working on a particular vocal sound. I think about building companies a lot, read wherever the interest takes me, and am currently somewhere in Zero to One.",
+    `I'm a software engineer, ${_age}, based in Bengaluru. I build distributed systems and I'm a little obsessed with understanding software at the level where abstractions give out. Go and Java on cloud at my work, Rust and C++ tinkering with some hardware in my free time. Why does a sync.RWMutex appear faster under benchmarks but sync.Mutex always seems to win when running multiple pods of a Go service. Replicating a TCP packet system over wire in real life. That curiosity shapes how I work: ship the simple thing first, profile before optimizing, reach for abstraction only when not having one is genuinely expensive.`,
+    "Outside of engineering, I make and post music/song covers. I also think about building companies a lot, read wherever the interest takes me, and am currently somewhere in Zero to One."
   ],
 };
 
@@ -91,10 +91,15 @@ export const experience = [
   },
 ];
 
-export const creative = {
+export const music = {
   bio: 'Outside of distributed systems, I make music and visual art. The two practices aren\'t as separate as they seem.',
   instagramUrl: 'https://www.instagram.com/ashin.notex/',
   instagramHandle: '@ashin.notex',
+  covers: [
+    'https://www.youtube.com/shorts/wq4z3wv5MYc',
+    'https://www.youtube.com/shorts/_0fumwGVFrI',
+    'https://www.youtube.com/shorts/Mw2ARYeFNhA',
+  ],
 };
 
 export const contact = {

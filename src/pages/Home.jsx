@@ -4,7 +4,7 @@ import Marquee from '../components/ui/Marquee';
 import About from '../components/sections/About';
 import Work from '../components/sections/Work';
 import Built from '../components/sections/Built';
-import Creative from '../components/sections/Creative';
+import Music from '../components/sections/Music';
 import Contact from '../components/sections/Contact';
 import Footer from '../components/layout/Footer';
 import { useState } from 'react';
@@ -58,7 +58,12 @@ function Home() {
         <About aboutP1={overrides.about_p1} aboutP2={overrides.about_p2} />
         <Work />
         <Built />
-        <Creative creativeBio={overrides.creative_bio} />
+        <Music
+          musicBio={overrides.music_bio ?? overrides.creative_bio}
+          covers={[overrides.cover_1, overrides.cover_2, overrides.cover_3].some(Boolean)
+            ? [overrides.cover_1, overrides.cover_2, overrides.cover_3]
+            : null}
+        />
         <Contact resumeLabel={overrides.resume_label} />
       </main>
       <Footer />

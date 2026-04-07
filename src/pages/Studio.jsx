@@ -477,14 +477,30 @@ function Studio() {
         </section>
 
         <section className="studio-section">
-          <label className="studio-section-title">Creative bio</label>
+          <label className="studio-section-title">Music bio</label>
           <textarea
             className="studio-textarea"
             rows={4}
-            value={overrides.creative_bio || ''}
-            onChange={e => setOverrides(prev => ({ ...prev, creative_bio: e.target.value }))}
+            value={overrides.music_bio ?? overrides.creative_bio ?? ''}
+            onChange={e => setOverrides(prev => ({ ...prev, music_bio: e.target.value }))}
             placeholder="Outside of distributed systems, I make music and visual art..."
           />
+        </section>
+
+        <section className="studio-section">
+          <label className="studio-section-title">Covers — YouTube URLs</label>
+          <p className="studio-hint">Paste any YouTube URL (Shorts, youtu.be, or watch?v=). Blank slots are hidden.</p>
+          {['cover_1', 'cover_2', 'cover_3'].map((key, i) => (
+            <input
+              key={key}
+              type="text"
+              className="studio-input"
+              style={{ marginBottom: '0.5rem' }}
+              value={overrides[key] || ''}
+              onChange={e => setOverrides(prev => ({ ...prev, [key]: e.target.value }))}
+              placeholder={`Cover ${i + 1} URL`}
+            />
+          ))}
         </section>
 
         <section className="studio-section">
